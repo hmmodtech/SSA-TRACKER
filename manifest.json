@@ -1,8 +1,8 @@
 {
   "name": "ACF Security Site Assessment",
   "short_name": "SSA-TRACKER",
-  "start_url": "/index.html/",
-  "scope": "/index.html/",
+  "start_url": "/SSA-TRACKER/",
+  "scope": "/SSA-TRACKER/",
   "display": "standalone",
   "background_color": "#FAFAFA",
   "theme_color": "#2471A3",
