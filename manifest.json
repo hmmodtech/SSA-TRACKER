@@ -1,0 +1,12 @@
+{
+  "name": "ACF Security Site Assessment",
+  "short_name": "ACF Assessment",
+  "start_url": "./acf-security-assessment.html",
+  "display": "standalone",
+  "background_color": "#FAFAFA",
+  "theme_color": "#C0392B",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
