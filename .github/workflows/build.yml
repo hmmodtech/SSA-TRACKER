@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - main
-      - master # سيعمل الأكشن عند الرفع على فرع main أو master
-  workflow_dispatch: # يتيح لك تشغيل البناء يدوياً أيضاً
+      - master
+  workflow_dispatch:
 
 jobs:
   build:
@@ -16,14 +16,13 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      # 2. إعداد بيئة نود (Node.js)
+      # 2. إعداد بيئة نود بدون تفعيل الكاش الإجباري لملف الـ lock
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
-      # 3. تثبيت حزم الـ Node المحددة في package.json
+      # 3. تثبيت حزم الـ Node (استخدام install العادي بدلاً من الكاش)
       - name: Install Dependencies
         run: npm install
 
@@ -34,6 +33,28 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      # 5. إعطاء صلاحية تنفيذ لملف البناء الخاص بالأندرويد (لتفادي أي خطأ صلاحيات)
+      - name: Grant Execute Permission for Gradle
+        run: |
+          npx cap add android || true
+          if [ -d "android" ]; then chmod +x android/gradlew; fi
+
+      # 6. دمج ملفات موقعك وتحديث بيئة Capacitor
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      # 7. بناء ملف الـ APK النهائي
+      - name: Build Android APK
+        run: |
+          cd android
+          ./gradlew assembleDebug
+
+      # 8. رفع ملف الـ APK النهائي إلى قسم المخرجات (Artifacts)
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyWebApp-Android-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
       # 5. إضافة منصة الأندرويد لـ Capacitor وتحديث الملفات
       - name: Add Android Platform
         run: |
