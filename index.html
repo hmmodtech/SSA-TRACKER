@@ -281,20 +281,22 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="section-header"><span class="sec-icon">📋</span><h2>Assessment Team Members</h2></div>
     <div class="section-body">
       <div class="info-box"><strong>ACF Protocol</strong>Two persons must conduct each assessment, coordinated by the Security Officer.</div>
-      <div class="field-group"><label>Team Member 1 — Name &amp; Position <span class="required">*</span></label><input type="text" id="team1" placeholder="e.g. Ahmed Al-Rashid, Security Officer"></div>
-      <div class="field-group"><label>Team Member 2 — Name &amp; Position <span class="required">*</span></label><input type="text" id="team2" placeholder="e.g. Sara Khoury, Area Manager"></div>
-      <div class="field-group"><label>Additional Team Members</label><input type="text" id="team3" placeholder="Name &amp; Position"></div>
+      <div id="team-member-list"></div>
+      <button type="button" class="map-btn secondary" onclick="addTeamMember()" style="margin-top:6px;">+ Add Team Member</button>
     </div>
   </div>
   <div class="section-card">
     <div class="section-header"><span class="sec-icon">📍</span><h2>Site Identification</h2></div>
     <div class="section-body">
-      <div class="field-group"><label>Site Name <span class="required">*</span></label><input type="text" id="site-name" placeholder="Official name of the site / camp"></div>
+      <div class="field-group"><label>Site Name <span class="required">*</span></label><input type="text" id="site-name" list="site-name-history" placeholder="Official name of the site / camp"></div>
       <div class="row-2">
         <div class="field-group"><label>Date of Assessment <span class="required">*</span></label><input type="date" id="assess-date"></div>
         <div class="field-group"><label>Time</label><input type="time" id="assess-time"></div>
       </div>
     </div>
+  </div>
+  <div style="text-align:center;margin-top:6px;">
+    <button type="button" onclick="confirmClearDraft()" style="background:none;border:none;color:var(--gray-500);font-size:11px;text-decoration:underline;cursor:pointer;font-family:var(--font);">🗑 Clear saved draft &amp; start fresh</button>
   </div>
 </div>
 
@@ -305,6 +307,14 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="section-header"><span class="sec-icon">🏕️</span><h2>Camp Details</h2></div>
     <div class="section-body">
       <div class="field-group">
+        <label>Camp GPS Coordinates</label>
+        <div class="row-2">
+          <input type="text" id="camp-gps" placeholder="Latitude, Longitude" readonly style="background:var(--gray-50);">
+          <button type="button" class="map-btn secondary" onclick="captureCampGPS()" style="flex:0 0 auto;">📍 Get Current Location</button>
+        </div>
+      </div>
+      <div class="field-divider"></div>
+      <div class="field-group">
         <label>Date Camp Was Set Up<span class="hint">Indicates level of control and organization.</span></label>
         <div class="row-2">
           <select id="camp-month"><option value="">Month</option><option>January</option><option>February</option><option>March</option><option>April</option><option>May</option><option>June</option><option>July</option><option>August</option><option>September</option><option>October</option><option>November</option><option>December</option></select>
@@ -312,7 +322,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         </div>
       </div>
       <div class="field-divider"></div>
-      <div class="field-group"><label>Community Leader Name <span class="required">*</span></label><input type="text" id="leader-name" placeholder="Full name"></div>
+      <div class="field-group"><label>Community Leader Name <span class="required">*</span></label><input type="text" id="leader-name" list="leader-name-history" placeholder="Full name"></div>
       <div class="field-group"><label>Community Leader Phone</label><input type="tel" id="leader-phone" placeholder="+XXX XXX XXX XXXX"></div>
       <div class="field-divider"></div>
       <div class="field-group">
@@ -323,9 +333,20 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div class="radio-btn"><input type="radio" name="committee" id="committee-unknown" value="Unknown"><label for="committee-unknown">? Unknown</label></div>
         </div>
       </div>
-      <div class="field-group"><label>Committee Notes</label><textarea id="committee-notes" rows="2" placeholder="Structure, additional contacts..."></textarea></div>
+      <div id="committee-followup" style="display:none;">
+        <div class="row-2">
+          <div class="field-group"><label>Total Committee Members</label><input type="number" id="committee-total" min="0" placeholder="e.g. 7"></div>
+          <div class="field-group"><label>Males / Females</label>
+            <div class="row-2">
+              <input type="number" id="committee-males" min="0" placeholder="Males">
+              <input type="number" id="committee-females" min="0" placeholder="Females">
+            </div>
+          </div>
+        </div>
+        <div class="field-group"><label>Comments</label><textarea id="committee-notes" rows="2" placeholder="Structure, additional contacts..."></textarea></div>
+      </div>
       <div class="field-divider"></div>
-      <div class="field-group"><label>Camp Backup Representative (Deputy)</label><input type="text" id="deputy-name" placeholder="Full name"></div>
+      <div class="field-group"><label>Camp Backup Representative (Deputy)</label><input type="text" id="deputy-name" list="deputy-name-history" placeholder="Full name"></div>
       <div class="field-group"><label>Deputy Phone</label><input type="tel" id="deputy-phone" placeholder="+XXX XXX XXX XXXX"></div>
       <div class="field-divider"></div>
       <div class="field-group">
@@ -335,7 +356,9 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div class="radio-btn"><input type="radio" name="leader-resides" id="lr-no" value="No"><label for="lr-no">✗ No</label></div>
         </div>
       </div>
-      <div class="field-group"><label>If No — location and distance</label><input type="text" id="leader-location" placeholder="Location / approximate distance"></div>
+      <div id="leader-location-wrap" style="display:none;">
+        <div class="field-group"><label>Location and distance</label><input type="text" id="leader-location" placeholder="Location / approximate distance"></div>
+      </div>
       <div class="field-divider"></div>
       <div class="row-2">
         <div class="field-group"><label>Number of Households</label><input type="number" id="num-households" placeholder="e.g. 350" min="0"></div>
@@ -348,7 +371,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div class="radio-btn"><input type="radio" name="camp-type" id="ct-standalone" value="Stand-alone"><label for="ct-standalone">Stand-alone</label></div>
           <div class="radio-btn"><input type="radio" name="camp-type" id="ct-group" value="Part of a group"><label for="ct-group">Part of a group</label></div>
         </div>
-        <textarea id="camp-type-desc" rows="2" placeholder="Number of sectors, main leader name &amp; contact..."></textarea>
+      </div>
+      <div id="camp-type-followup" style="display:none;">
+        <div class="field-group"><label>Number of Sectors</label><input type="number" id="camp-sectors" min="0" placeholder="e.g. 4"></div>
+        <div class="field-group"><label>Comments<span class="hint">Main community leader's name &amp; contact (in charge of all sectors)</span></label><textarea id="camp-type-desc" rows="2" placeholder="Main leader name &amp; contact..."></textarea></div>
       </div>
     </div>
   </div>
@@ -367,6 +393,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div class="radio-btn"><input type="radio" name="cars-access" id="ca-no" value="No"><label for="ca-no">✗ No</label></div>
           <div class="radio-btn"><input type="radio" name="cars-access" id="ca-partial" value="Partial"><label for="ca-partial">Partial</label></div>
         </div>
+      </div>
+      <div id="cars-access-desc-wrap" style="display:none;">
         <textarea id="cars-access-desc" rows="3" placeholder="Vehicle count, truck access, road surface..."></textarea>
       </div>
     </div>
@@ -388,14 +416,22 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="section-header"><span class="sec-icon">📡</span><h2>Communications &amp; Other NGOs</h2></div>
     <div class="section-body">
       <div class="field-group">
-        <label>Phone Signal Strength</label>
+        <label>Jawwal Signal Strength</label>
         <div class="radio-group" style="margin-bottom:8px;">
-          <div class="radio-btn"><input type="radio" name="signal" id="sig-strong" value="Strong"><label for="sig-strong">📶 Strong</label></div>
-          <div class="radio-btn"><input type="radio" name="signal" id="sig-moderate" value="Moderate"><label for="sig-moderate">📶 Moderate</label></div>
-          <div class="radio-btn"><input type="radio" name="signal" id="sig-weak" value="Weak"><label for="sig-weak">📶 Weak</label></div>
-          <div class="radio-btn"><input type="radio" name="signal" id="sig-none" value="No signal"><label for="sig-none">❌ No signal</label></div>
+          <div class="radio-btn"><input type="radio" name="signal-jawwal" id="sig-jawwal-strong" value="Strong"><label for="sig-jawwal-strong">📶 Strong</label></div>
+          <div class="radio-btn"><input type="radio" name="signal-jawwal" id="sig-jawwal-moderate" value="Moderate"><label for="sig-jawwal-moderate">📶 Moderate</label></div>
+          <div class="radio-btn"><input type="radio" name="signal-jawwal" id="sig-jawwal-weak" value="Weak"><label for="sig-jawwal-weak">📶 Weak</label></div>
+          <div class="radio-btn"><input type="radio" name="signal-jawwal" id="sig-jawwal-none" value="No signal"><label for="sig-jawwal-none">❌ No signal</label></div>
         </div>
-        <input type="text" id="signal-providers" placeholder="Which providers have coverage?">
+      </div>
+      <div class="field-group">
+        <label>Ooredoo Signal Strength</label>
+        <div class="radio-group" style="margin-bottom:8px;">
+          <div class="radio-btn"><input type="radio" name="signal-ooredoo" id="sig-ooredoo-strong" value="Strong"><label for="sig-ooredoo-strong">📶 Strong</label></div>
+          <div class="radio-btn"><input type="radio" name="signal-ooredoo" id="sig-ooredoo-moderate" value="Moderate"><label for="sig-ooredoo-moderate">📶 Moderate</label></div>
+          <div class="radio-btn"><input type="radio" name="signal-ooredoo" id="sig-ooredoo-weak" value="Weak"><label for="sig-ooredoo-weak">📶 Weak</label></div>
+          <div class="radio-btn"><input type="radio" name="signal-ooredoo" id="sig-ooredoo-none" value="No signal"><label for="sig-ooredoo-none">❌ No signal</label></div>
+        </div>
       </div>
       <div class="field-divider"></div>
       <div class="field-group">
@@ -404,6 +440,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div class="radio-btn"><input type="radio" name="ngos" id="ngo-yes" value="Yes"><label for="ngo-yes">✓ Yes</label></div>
           <div class="radio-btn"><input type="radio" name="ngos" id="ngo-no" value="No"><label for="ngo-no">✗ No</label></div>
         </div>
+      </div>
+      <div id="ngo-desc-wrap" style="display:none;">
         <textarea id="ngo-desc" rows="3" placeholder="Organisation names, types of programming..."></textarea>
       </div>
     </div>
@@ -417,7 +455,17 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <div class="section-card">
     <div class="section-header"><span class="sec-icon">🔍</span><h2>Site Observations</h2></div>
     <div class="section-body">
-      <div class="field-group"><label>Nearest Airstrike to Site</label><textarea id="obs-airstrike" rows="3" placeholder="Proximity, direction, date, visible damage..."></textarea></div>
+      <div class="field-group">
+        <label>Nearest Airstrike to Site</label>
+        <div class="radio-group" style="margin-bottom:8px;">
+          <div class="radio-btn"><input type="radio" name="airstrike" id="airstrike-yes" value="Yes"><label for="airstrike-yes">✓ Yes</label></div>
+          <div class="radio-btn"><input type="radio" name="airstrike" id="airstrike-no" value="No"><label for="airstrike-no">✗ No</label></div>
+        </div>
+      </div>
+      <div id="airstrike-followup" style="display:none;">
+        <div class="field-group"><label>Date of Airstrike</label><input type="date" id="airstrike-date"></div>
+        <div class="field-group"><label>Notes</label><textarea id="obs-airstrike" rows="3" placeholder="Proximity, direction, visible damage..."></textarea></div>
+      </div>
       <div class="field-divider"></div>
       <div class="field-group">
         <label>Rubble / Signs of UXOs?</label>
@@ -426,6 +474,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div class="radio-btn"><input type="radio" name="uxo" id="uxo-no" value="None observed"><label for="uxo-no">✓ None</label></div>
           <div class="radio-btn"><input type="radio" name="uxo" id="uxo-unclear" value="Unclear"><label for="uxo-unclear">? Unclear</label></div>
         </div>
+      </div>
+      <div id="obs-uxo-wrap" style="display:none;">
         <textarea id="obs-uxo" rows="2" placeholder="Location, suspicious objects, quantities..."></textarea>
       </div>
       <div class="field-divider"></div>
@@ -437,6 +487,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div class="radio-btn"><input type="radio" name="safe-haven" id="sh-yes" value="Yes — identified"><label for="sh-yes">✓ Identified</label></div>
           <div class="radio-btn"><input type="radio" name="safe-haven" id="sh-no" value="None identified"><label for="sh-no">✗ None</label></div>
         </div>
+      </div>
+      <div id="obs-safehaven-wrap" style="display:none;">
         <textarea id="obs-safehaven" rows="3" placeholder="Distance, construction type, capacity..."></textarea>
       </div>
       <div class="field-divider"></div>
@@ -507,6 +559,15 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <button class="layer-btn active" onclick="switchLayer('street')" id="layer-street">🗺 Street</button>
         <button class="layer-btn" onclick="switchLayer('satellite')" id="layer-satellite">🛰 Satellite</button>
         <button class="layer-btn" onclick="switchLayer('terrain')" id="layer-terrain">⛰ Terrain</button>
+      </div>
+
+      <div class="offline-map-panel">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray-500);margin-bottom:6px;">🔍 Go to Coordinates</div>
+        <div class="row-2">
+          <input type="text" id="goto-lat" placeholder="Latitude">
+          <input type="text" id="goto-lng" placeholder="Longitude">
+        </div>
+        <button class="map-btn secondary" onclick="goToCoordinates()" style="width:100%;margin-top:8px;">🔍 Search &amp; Go</button>
       </div>
 
       <div class="offline-map-panel">
@@ -610,7 +671,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div class="upload-label">Tap to capture or upload</div>
           <div class="upload-sub">General overview of the site</div>
         </div>
-        <input type="file" id="photo-input-overview" accept="image/*" multiple capture="environment" style="display:none" onchange="handlePhotos('overview', this)">
+        <input type="file" id="photo-input-overview" accept="image/*" multiple style="display:none" onchange="handlePhotos('overview', this)">
         <div class="photo-counter" id="counter-overview">0 / 3</div>
         <div class="photo-preview-grid" id="preview-overview"></div>
       </div>
@@ -626,7 +687,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div class="upload-label">Tap to capture or upload</div>
           <div class="upload-sub">Entrance, exit, surrounding area</div>
         </div>
-        <input type="file" id="photo-input-entry" accept="image/*" multiple capture="environment" style="display:none" onchange="handlePhotos('entry', this)">
+        <input type="file" id="photo-input-entry" accept="image/*" multiple style="display:none" onchange="handlePhotos('entry', this)">
         <div class="photo-counter" id="counter-entry">0 / 3</div>
         <div class="photo-preview-grid" id="preview-entry"></div>
       </div>
@@ -642,7 +703,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div class="upload-label">Tap to capture or upload</div>
           <div class="upload-sub">Distribution point — entrance and interior</div>
         </div>
-        <input type="file" id="photo-input-distrib" accept="image/*" multiple capture="environment" style="display:none" onchange="handlePhotos('distrib', this)">
+        <input type="file" id="photo-input-distrib" accept="image/*" multiple style="display:none" onchange="handlePhotos('distrib', this)">
         <div class="photo-counter" id="counter-distrib">0 / 3</div>
         <div class="photo-preview-grid" id="preview-distrib"></div>
       </div>
@@ -658,7 +719,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div class="upload-label">Tap to capture or upload</div>
           <div class="upload-sub">Safe haven location — if available</div>
         </div>
-        <input type="file" id="photo-input-safehaven" accept="image/*" multiple capture="environment" style="display:none" onchange="handlePhotos('safehaven', this)">
+        <input type="file" id="photo-input-safehaven" accept="image/*" multiple style="display:none" onchange="handlePhotos('safehaven', this)">
         <div class="photo-counter" id="counter-safehaven">0 / 3</div>
         <div class="photo-preview-grid" id="preview-safehaven"></div>
       </div>
@@ -674,7 +735,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           <div class="upload-label">Tap to capture or upload</div>
           <div class="upload-sub">Vehicle parking area</div>
         </div>
-        <input type="file" id="photo-input-parking" accept="image/*" multiple capture="environment" style="display:none" onchange="handlePhotos('parking', this)">
+        <input type="file" id="photo-input-parking" accept="image/*" multiple style="display:none" onchange="handlePhotos('parking', this)">
         <div class="photo-counter" id="counter-parking">0 / 3</div>
         <div class="photo-preview-grid" id="preview-parking"></div>
       </div>
@@ -734,6 +795,11 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <button class="map-btn pin-park" onclick="captureDropPinFS('parking')">🟣 Park</button>
     <button class="map-btn pin-uxo" onclick="captureDropPinFS('uxo')">🟠 UXO</button>
     <button class="map-btn secondary" onclick="toggleEditModeFS()" id="fs-btn-edit" style="color:white;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3);">✏️ Edit</button>
+    <button class="map-btn secondary" onclick="toggleGotoBoxFS()" style="color:white;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3);">🔍 Go to</button>
+  </div>
+  <div id="goto-box-fs" style="display:none;position:absolute;top:54px;left:50%;transform:translateX(-50%);z-index:700;background:rgba(0,0,0,0.85);border-radius:var(--radius);padding:10px;gap:8px;align-items:center;">
+    <input type="text" id="goto-coords-fs" placeholder="Latitude, Longitude" style="width:180px;background:rgba(255,255,255,0.9);">
+    <button class="map-btn secondary" onclick="goToCoordinatesFS()">Go</button>
   </div>
   <div id="map-fs-inner">
     <div id="leaflet-map-fs"></div>
@@ -793,14 +859,238 @@ var photos = { overview:[], entry:[], distrib:[], safehaven:[], parking:[] };
 var capturedSketchDataURL = null;
 var capturedSketchStats   = null;
 var mapScreenshots = []; // [{dataURL, label}]
+var teamMemberCount = 0;
+
+// ============================================================
+// TEAM MEMBERS (dynamic list)
+// ============================================================
+function addTeamMember(prefillValue) {
+  teamMemberCount++;
+  var idx = teamMemberCount;
+  var wrap = document.createElement('div');
+  wrap.className = 'field-group';
+  wrap.id = 'team-row-' + idx;
+  wrap.style.position = 'relative';
+  var requiredMark = idx <= 2 ? ' <span class="required">*</span>' : '';
+  var removeBtn = idx > 2 ? '<button type="button" class="gps-clear-btn" onclick="removeTeamMember(' + idx + ')" style="position:absolute;top:0;right:0;font-size:13px;">✕ remove</button>' : '';
+  wrap.innerHTML = '<label>Team Member ' + idx + ' — Name &amp; Position' + requiredMark + '</label>'
+    + '<input type="text" id="team' + idx + '" list="team-name-history" placeholder="e.g. Ahmed Al-Rashid, Security Officer">'
+    + removeBtn;
+  document.getElementById('team-member-list').appendChild(wrap);
+  if (prefillValue) document.getElementById('team' + idx).value = prefillValue;
+}
+function removeTeamMember(idx) {
+  var row = document.getElementById('team-row-' + idx);
+  if (row) row.remove();
+}
+function renderDefaultTeamMembers() {
+  document.getElementById('team-member-list').innerHTML = '';
+  teamMemberCount = 0;
+  addTeamMember('Ahmed Abu Jami, Security Assistant');
+  addTeamMember();
+  addTeamMember();
+}
+
+// ============================================================
+// PREDICTIVE SUGGESTIONS (lightweight, per-field typed history)
+// ============================================================
+function loadPredictiveHistory(key) {
+  try { return JSON.parse(localStorage.getItem('acfHistory_' + key) || '[]'); } catch (e) { return []; }
+}
+function savePredictiveValue(key, value) {
+  value = (value || '').trim();
+  if (!value) return;
+  var list = loadPredictiveHistory(key).filter(function (v) { return v !== value; });
+  list.unshift(value);
+  if (list.length > 20) list = list.slice(0, 20);
+  try { localStorage.setItem('acfHistory_' + key, JSON.stringify(list)); } catch (e) {}
+  populateDatalist(key);
+}
+function populateDatalist(key) {
+  var dl = document.getElementById(key);
+  if (!dl) return;
+  dl.innerHTML = loadPredictiveHistory(key).map(function (v) {
+    return '<option value="' + v.replace(/"/g, '&quot;') + '"></option>';
+  }).join('');
+}
+function initPredictiveSuggestions() {
+  ['site-name-history', 'leader-name-history', 'deputy-name-history', 'team-name-history'].forEach(populateDatalist);
+  document.getElementById('site-name').addEventListener('change', function () { savePredictiveValue('site-name-history', this.value); });
+  document.getElementById('leader-name').addEventListener('change', function () { savePredictiveValue('leader-name-history', this.value); });
+  document.getElementById('deputy-name').addEventListener('change', function () { savePredictiveValue('deputy-name-history', this.value); });
+  document.getElementById('team-member-list').addEventListener('change', function (e) {
+    if (e.target && e.target.tagName === 'INPUT') savePredictiveValue('team-name-history', e.target.value);
+  });
+}
+
+// ============================================================
+// AUTOSAVE / RESTORE DRAFT (IndexedDB — survives closing the app,
+// so a half-filled assessment can be finished a day or more later)
+// ============================================================
+var AUTOSAVE_DB_NAME = 'acfAssessmentDraftDB';
+var AUTOSAVE_STORE = 'draft';
+var autosaveDBPromise = null;
+var autosaveTimer = null;
+
+function openAutosaveDB() {
+  if (autosaveDBPromise) return autosaveDBPromise;
+  autosaveDBPromise = new Promise(function (resolve, reject) {
+    if (!('indexedDB' in window)) { reject(new Error('IndexedDB not supported')); return; }
+    var req = indexedDB.open(AUTOSAVE_DB_NAME, 1);
+    req.onupgradeneeded = function () { req.result.createObjectStore(AUTOSAVE_STORE); };
+    req.onsuccess = function () { resolve(req.result); };
+    req.onerror = function () { reject(req.error); };
+  });
+  return autosaveDBPromise;
+}
+function collectFullAppState() {
+  var fields = {};
+  document.querySelectorAll('input[id], textarea[id], select[id]').forEach(function (el) {
+    if (el.type === 'file' || el.type === 'radio') return;
+    fields[el.id] = el.value;
+  });
+  var radios = {};
+  document.querySelectorAll('input[type="radio"][name]').forEach(function (el) {
+    if (el.checked) radios[el.name] = el.value;
+  });
+  return {
+    fields: fields, radios: radios,
+    photos: photos, mapScreenshots: mapScreenshots, capturedSketchDataURL: capturedSketchDataURL,
+    gpsPoints: gpsPoints, extraPolyPoints: extraPolyPoints,
+    dropPins: dropPins.map(function (p) { return { type: p.type, lat: p.lat, lng: p.lng }; }),
+    savedAt: new Date().toISOString()
+  };
+}
+function autosaveDraft() {
+  openAutosaveDB().then(function (db) {
+    var tx = db.transaction(AUTOSAVE_STORE, 'readwrite');
+    tx.objectStore(AUTOSAVE_STORE).put(collectFullAppState(), 'current');
+  }).catch(function (e) { console.warn('Autosave failed:', e); });
+}
+function scheduleAutosave() {
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(autosaveDraft, 1000);
+}
+function restoreDraft() {
+  return openAutosaveDB().then(function (db) {
+    return new Promise(function (resolve, reject) {
+      var tx = db.transaction(AUTOSAVE_STORE, 'readonly');
+      var req = tx.objectStore(AUTOSAVE_STORE).get('current');
+      req.onsuccess = function () { resolve(req.result || null); };
+      req.onerror = function () { reject(req.error); };
+    });
+  });
+}
+function clearDraft() {
+  openAutosaveDB().then(function (db) {
+    db.transaction(AUTOSAVE_STORE, 'readwrite').objectStore(AUTOSAVE_STORE).delete('current');
+  }).then(function () { showToast('Saved draft cleared.'); }).catch(function () {});
+}
+function confirmClearDraft() {
+  if (!confirm('Clear the saved draft and start a fresh assessment? This cannot be undone.')) return;
+  clearDraft();
+  setTimeout(function () { location.reload(); }, 600);
+}
+function applyDraftState(state) {
+  if (!state) return;
+  var teamKeys = Object.keys(state.fields || {}).filter(function (k) { return /^team\d+$/.test(k); });
+  var maxIdx = teamKeys.reduce(function (m, k) { return Math.max(m, parseInt(k.replace('team', ''), 10)); }, 0);
+  document.getElementById('team-member-list').innerHTML = '';
+  teamMemberCount = 0;
+  for (var i = 0; i < Math.max(maxIdx, 3); i++) addTeamMember();
+
+  Object.keys(state.fields || {}).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.value = state.fields[id];
+  });
+  Object.keys(state.radios || {}).forEach(function (name) {
+    var el = document.querySelector('input[name="' + name + '"][value="' + String(state.radios[name] || '').replace(/"/g, '\\"') + '"]');
+    if (el) el.checked = true;
+  });
+
+  if (state.photos) { photos = state.photos; ['overview', 'entry', 'distrib', 'safehaven', 'parking'].forEach(renderPhotoPreviews); }
+  if (state.mapScreenshots) { mapScreenshots = state.mapScreenshots; renderScreenshotsGallery(); }
+  if (state.capturedSketchDataURL) { capturedSketchDataURL = state.capturedSketchDataURL; }
+  if (state.gpsPoints) {
+    gpsPoints = state.gpsPoints;
+    Object.keys(gpsPoints).forEach(function (c) { if (gpsPoints[c]) updateGPSDisplay(c, gpsPoints[c].lat, gpsPoints[c].lng); });
+  }
+  if (state.extraPolyPoints) extraPolyPoints = state.extraPolyPoints;
+  if (state.dropPins) dropPins = state.dropPins.map(function (p) { return { type: p.type, lat: p.lat, lng: p.lng, markerMain: null, markerFS: null }; });
+  renderPinList();
+  if (map)   { restoreMarkersOnMap(map, 'main'); redrawBoth(); }
+  if (mapFS) { restoreMarkersOnMap(mapFS, 'fs'); }
+  updateStats();
+  refreshAllConditionalSections();
+}
+function initAutosave() {
+  document.addEventListener('input', function (e) {
+    if (e.target && e.target.id === 'templateInput') return;
+    scheduleAutosave();
+  });
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.id === 'templateInput') return;
+    scheduleAutosave();
+  });
+}
+
+// ============================================================
+// CONDITIONAL FOLLOW-UP SECTIONS — shown only for the relevant
+// Yes/No (or similar) answer, instead of always-visible fields
+// ============================================================
+var CONDITIONAL_BINDINGS = [
+  { radioName: 'committee',      showWhen: ['Yes'],                          containerId: 'committee-followup' },
+  { radioName: 'leader-resides', showWhen: ['No'],                           containerId: 'leader-location-wrap' },
+  { radioName: 'camp-type',      showWhen: ['Part of a group'],              containerId: 'camp-type-followup' },
+  { radioName: 'cars-access',    showWhen: ['Yes', 'Partial'],               containerId: 'cars-access-desc-wrap' },
+  { radioName: 'ngos',           showWhen: ['Yes'],                          containerId: 'ngo-desc-wrap' },
+  { radioName: 'uxo',            showWhen: ['Yes — observed', 'Unclear'],    containerId: 'obs-uxo-wrap' },
+  { radioName: 'safe-haven',     showWhen: ['Yes — identified'],             containerId: 'obs-safehaven-wrap' },
+  { radioName: 'airstrike',      showWhen: ['Yes'],                          containerId: 'airstrike-followup' }
+];
+function refreshConditional(binding) {
+  var checked = document.querySelector('input[name="' + binding.radioName + '"]:checked');
+  var container = document.getElementById(binding.containerId);
+  if (!container) return;
+  container.style.display = (checked && binding.showWhen.indexOf(checked.value) !== -1) ? '' : 'none';
+}
+function refreshAllConditionalSections() {
+  CONDITIONAL_BINDINGS.forEach(refreshConditional);
+}
+function initConditionalSections() {
+  CONDITIONAL_BINDINGS.forEach(function (binding) {
+    document.querySelectorAll('input[name="' + binding.radioName + '"]').forEach(function (el) {
+      el.addEventListener('change', function () { refreshConditional(binding); });
+    });
+  });
+  refreshAllConditionalSections();
+}
 
 // ============================================================
 // INIT
 // ============================================================
 window.addEventListener('load', function() {
-  var today = new Date().toISOString().split('T')[0];
-  document.getElementById('assess-date').value = today;
-  updateNavButtons();
+  initPredictiveSuggestions();
+  initAutosave();
+  initConditionalSections();
+  restoreDraft().then(function (state) {
+    if (state && state.savedAt) {
+      renderDefaultTeamMembers();
+      applyDraftState(state);
+      var d = new Date(state.savedAt);
+      showToast('Restored your saved draft from ' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+    } else {
+      var today = new Date().toISOString().split('T')[0];
+      document.getElementById('assess-date').value = today;
+      renderDefaultTeamMembers();
+    }
+    updateNavButtons();
+  }).catch(function () {
+    var today = new Date().toISOString().split('T')[0];
+    document.getElementById('assess-date').value = today;
+    renderDefaultTeamMembers();
+    updateNavButtons();
+  });
 });
 
 // ============================================================
@@ -1124,12 +1414,99 @@ updateOfflineMapStatusUI();
 // ============================================================
 function locateMe() { doLocate(map, 'locate-btn'); }
 function locateMeFS() { doLocate(mapFS || map, 'locate-btn-fs'); }
+
+// ============================================================
+// GO TO COORDINATES (search a specific lat/lng and jump there)
+// ============================================================
+var searchMarkerMain = null, searchMarkerFS = null;
+function placeSearchMarker(m, lat, lng) {
+  var icon = L.divIcon({
+    html: '<div style="display:flex;flex-direction:column;align-items:center;">'
+        + '<div style="background:#8E44AD;color:white;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.5);border:2px solid white;">🔍 Searched location</div>'
+        + '<div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #8E44AD;margin-top:-1px;"></div>'
+        + '</div>',
+    className: '', iconAnchor: [10, 8]
+  });
+  var isMain = (m === map);
+  if (isMain && searchMarkerMain) m.removeLayer(searchMarkerMain);
+  if (!isMain && searchMarkerFS) m.removeLayer(searchMarkerFS);
+  var mk = L.marker([lat, lng], { icon: icon }).addTo(m);
+  if (isMain) searchMarkerMain = mk; else searchMarkerFS = mk;
+}
+function parseLatLng(latStr, lngStr) {
+  var lat = parseFloat(latStr), lng = parseFloat(lngStr);
+  if (isNaN(lat) || isNaN(lng)) return null;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+  return { lat: lat, lng: lng };
+}
+function goToCoordinates() {
+  var p = parseLatLng(getVal('goto-lat'), getVal('goto-lng'));
+  if (!p) { showToast('Enter a valid latitude and longitude.'); return; }
+  if (!map) initMap();
+  map.setView([p.lat, p.lng], 17);
+  placeSearchMarker(map, p.lat, p.lng);
+  showToast('Moved to ' + p.lat.toFixed(6) + ', ' + p.lng.toFixed(6));
+}
+function goToCoordinatesFS() {
+  var raw = getVal('goto-coords-fs');
+  var parts = raw.split(',');
+  var p = parts.length === 2 ? parseLatLng(parts[0].trim(), parts[1].trim()) : null;
+  if (!p) { showToast('Enter coordinates as: latitude, longitude'); return; }
+  if (!mapFS) initMapFS();
+  mapFS.setView([p.lat, p.lng], 17);
+  placeSearchMarker(mapFS, p.lat, p.lng);
+  showToast('Moved to ' + p.lat.toFixed(6) + ', ' + p.lng.toFixed(6));
+}
+function toggleGotoBoxFS() {
+  var box = document.getElementById('goto-box-fs');
+  box.style.display = (box.style.display === 'none' || !box.style.display) ? 'flex' : 'none';
+}
 function doLocate(m, btnId) {
   var btn = document.getElementById(btnId); if(!btn) return;
   btn.textContent = '⏳';
   navigator.geolocation.getCurrentPosition(
-    function(p){ m.setView([p.coords.latitude, p.coords.longitude], 17); btn.textContent = '📍 Me'; showToast('Location found!'); },
+    function(p){
+      var lat = p.coords.latitude, lng = p.coords.longitude;
+      m.setView([lat, lng], 17);
+      placeMyLocationMarker(m, lat, lng);
+      if (!getVal('main-lat') && !getVal('main-lng')) {
+        document.getElementById('main-lat').value = lat.toFixed(6);
+        document.getElementById('main-lng').value = lng.toFixed(6);
+      }
+      btn.textContent = '📍 Me';
+      showToast('Location found: ' + lat.toFixed(6) + ', ' + lng.toFixed(6));
+      scheduleAutosave();
+    },
     function(){ btn.textContent = '📍 Me'; showToast('Location denied.'); }
+  );
+}
+
+var myLocationMarkerMain = null, myLocationMarkerFS = null;
+function placeMyLocationMarker(m, lat, lng) {
+  var icon = L.divIcon({
+    html: '<div style="display:flex;flex-direction:column;align-items:center;">'
+        + '<div style="background:#1A5276;color:white;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.5);border:2px solid white;">📍 My Location</div>'
+        + '<div style="width:10px;height:10px;background:#1A5276;border-radius:50%;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4);margin-top:2px;"></div>'
+        + '</div>',
+    className: '', iconAnchor: [10, 10]
+  });
+  var isMain = (m === map);
+  if (isMain && myLocationMarkerMain) m.removeLayer(myLocationMarkerMain);
+  if (!isMain && myLocationMarkerFS) m.removeLayer(myLocationMarkerFS);
+  var mk = L.marker([lat, lng], { icon: icon }).addTo(m);
+  if (isMain) myLocationMarkerMain = mk; else myLocationMarkerFS = mk;
+}
+
+function captureCampGPS() {
+  showToast('Getting current location…');
+  navigator.geolocation.getCurrentPosition(
+    function (p) {
+      var lat = p.coords.latitude, lng = p.coords.longitude;
+      document.getElementById('camp-gps').value = lat.toFixed(6) + ', ' + lng.toFixed(6);
+      showToast('Camp GPS captured!');
+      scheduleAutosave();
+    },
+    function () { showToast('Location access denied.'); }
   );
 }
 
@@ -1454,675 +1831,4 @@ function updateStats() {
     var pStr = perim>=1000 ? (perim/1000).toFixed(2)+' km' : Math.round(perim)+' m';
     var aStr = area>=10000 ? (area/10000).toFixed(2)+' ha'  : Math.round(area)+' m²';
     document.getElementById('stat-perimeter').textContent = pStr;
-    document.getElementById('stat-area').textContent = aStr;
-    document.getElementById('site-stats-bar').style.display='';
-  } else if (pts.length) {
-    document.getElementById('site-stats-bar').style.display='';
-    document.getElementById('stat-perimeter').textContent='—';
-    document.getElementById('stat-area').textContent='—';
-  } else {
-    document.getElementById('site-stats-bar').style.display='none';
-  }
-}
-
-function haverDist(a,b) {
-  var R=6371000, dLat=(b.lat-a.lat)*Math.PI/180, dLng=(b.lng-a.lng)*Math.PI/180;
-  var s=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
-  return R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s));
-}
-function computePerimeter(pts) {
-  var t=0; for(var i=0;i<pts.length;i++) t+=haverDist(pts[i],pts[(i+1)%pts.length]); return t;
-}
-function computeArea(pts) {
-  var R=6371000,toRad=Math.PI/180,n=pts.length,area=0;
-  for(var i=0;i<n;i++){
-    var j=(i+1)%n;
-    var xi=pts[i].lng*toRad*R*Math.cos(pts[i].lat*toRad), yi=pts[i].lat*toRad*R;
-    var xj=pts[j].lng*toRad*R*Math.cos(pts[j].lat*toRad), yj=pts[j].lat*toRad*R;
-    area+=xi*yj-xj*yi;
-  }
-  return Math.abs(area)/2;
-}
-
-function updateCenterCoords() {
-  var pts = getAllPolyPoints();
-  if (!pts.length) return;
-  var lat = pts.reduce(function(s,p){return s+p.lat;},0)/pts.length;
-  var lng = pts.reduce(function(s,p){return s+p.lng;},0)/pts.length;
-  var latEl = document.getElementById('main-lat');
-  var lngEl = document.getElementById('main-lng');
-  if (!latEl.value) latEl.value = lat.toFixed(6);
-  if (!lngEl.value) lngEl.value = lng.toFixed(6);
-}
-
-function updateGPSDisplay(c, lat, lng) {
-  document.getElementById('gps-display-'+c).classList.add('set');
-  var el = document.getElementById('coords-'+c); el.classList.remove('empty');
-  el.textContent = lat.toFixed(6)+', '+lng.toFixed(6);
-}
-
-// ============================================================
-// SHARED CANVAS DRAWING HELPERS
-// ============================================================
-
-// Draw corner & extra-point labels directly on the canvas.
-// Uses Leaflet's own latLngToContainerPoint — coordinate-exact because
-// we do NOT call fitBounds/setView before this; the map is already settled.
-function llToCanvas(mapObj, mapEl, W, H, lat, lng) {
-  var pt  = mapObj.latLngToContainerPoint(L.latLng(lat, lng));
-  var elW = mapEl.offsetWidth  || mapEl.clientWidth  || 1;
-  var elH = mapEl.offsetHeight || mapEl.clientHeight || 1;
-  return { x: (pt.x / elW) * W, y: (pt.y / elH) * H };
-}
-
-// Overlay compact corner + extra-point labels on an already-captured canvas.
-// We do NOT redraw the polygon or pins — html2canvas already copied them from
-// the Leaflet DOM with pixel-perfect accuracy.
-function drawLabelsOnCanvas(ctx, mapObj, mapEl, W, H) {
-  var cornerNames  = { NW:'↖ NW', NE:'↗ NE', SE:'↘ SE', SW:'↙ SW' };
-  var namedCorners = ['NW','NE','SE','SW'];
-
-  namedCorners.forEach(function(cn) {
-    if (!gpsPoints[cn]) return;
-    var cp   = llToCanvas(mapObj, mapEl, W, H, gpsPoints[cn].lat, gpsPoints[cn].lng);
-    var fSz  = Math.max(10, W * 0.015);
-    var text = cornerNames[cn];
-    ctx.font = 'bold ' + fSz + 'px Arial';
-    var tw   = ctx.measureText(text).width;
-    // Badge background
-    ctx.fillStyle = cornerColors[cn];
-    ctx.beginPath();
-    ctx.roundRect
-      ? ctx.roundRect(cp.x - tw/2 - 5, cp.y - fSz - 10, tw + 10, fSz + 7, 4)
-      : ctx.rect(cp.x - tw/2 - 5, cp.y - fSz - 10, tw + 10, fSz + 7);
-    ctx.fill();
-    // Text
-    ctx.fillStyle  = 'white';
-    ctx.textAlign  = 'center';
-    ctx.fillText(text, cp.x, cp.y - 5);
-    ctx.textAlign  = 'left';
-    // Dot at exact GPS point
-    ctx.beginPath(); ctx.arc(cp.x, cp.y, 4, 0, Math.PI * 2);
-    ctx.fillStyle   = cornerColors[cn]; ctx.fill();
-    ctx.strokeStyle = 'white'; ctx.lineWidth = 1.5; ctx.stroke();
-  });
-
-  // Extra polygon points
-  extraPolyPoints.forEach(function(ep, i) {
-    var pp  = llToCanvas(mapObj, mapEl, W, H, ep.lat, ep.lng);
-    var nm  = ep.name || ('P' + (i + 1));
-    var fSz = Math.max(9, W * 0.012);
-    ctx.font = 'bold ' + fSz + 'px Arial';
-    var tw  = ctx.measureText(nm).width;
-    ctx.fillStyle = '#1A5276';
-    ctx.beginPath();
-    ctx.roundRect
-      ? ctx.roundRect(pp.x - tw/2 - 4, pp.y - fSz - 9, tw + 8, fSz + 6, 4)
-      : ctx.rect(pp.x - tw/2 - 4, pp.y - fSz - 9, tw + 8, fSz + 6);
-    ctx.fill();
-    ctx.fillStyle = 'white'; ctx.textAlign = 'center';
-    ctx.fillText(nm, pp.x, pp.y - 4);
-    ctx.textAlign = 'left';
-    ctx.beginPath(); ctx.arc(pp.x, pp.y, 3, 0, Math.PI * 2);
-    ctx.fillStyle = '#1A5276'; ctx.fill();
-    ctx.strokeStyle = 'white'; ctx.lineWidth = 1.5; ctx.stroke();
-  });
-}
-
-function addHeaderFooterToCanvas(ctx, W, H, siteName, assessDate, perimTxt, areaTxt, numPts) {
-  ctx.fillStyle = 'rgba(0,0,0,0.72)';
-  ctx.fillRect(0, 0, W, 40);
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold ' + Math.max(11, W * 0.021) + 'px Arial';
-  ctx.fillText('ACF Security Assessment — ' + siteName + '  |  ' + assessDate, 12, 27);
-  if (perimTxt && perimTxt !== '—') {
-    ctx.fillStyle = 'rgba(192,57,43,0.88)';
-    ctx.fillRect(0, H - 36, W, 36);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold ' + Math.max(10, W * 0.018) + 'px Arial';
-    ctx.fillText('  📐 Perimeter: ' + perimTxt + '     ⬛ Area: ' + areaTxt + '     📍 Points: ' + numPts, 8, H - 12);
-  }
-}
-
-// ============================================================
-// CAPTURE MAP SKETCH
-// ============================================================
-// ============================================================
-// PHOTOS
-// ============================================================
-function triggerPhotoInput(cat) {
-  var inp = document.getElementById('photo-input-' + cat);
-  if (inp) inp.click();
-}
-
-function handlePhotos(category, input) {
-  var MAX = 3;
-  var files = Array.from(input.files);
-  var remaining = MAX - photos[category].length;
-  if (remaining <= 0) { showToast('Maximum 3 photos per category.'); input.value = ''; return; }
-  files.slice(0, remaining).forEach(function(f) {
-    var reader = new FileReader();
-    reader.onload = function(e) { photos[category].push({ dataURL: e.target.result }); renderPhotoPreviews(category); };
-    reader.readAsDataURL(f);
-  });
-  input.value = '';
-}
-
-function renderPhotoPreviews(category) {
-  var MAX = 3;
-  var grid = document.getElementById('preview-' + category);
-  var counter = document.getElementById('counter-' + category);
-  if (!grid) return;
-  var count = photos[category].length;
-  // Update counter
-  if (counter) { counter.textContent = count + ' / ' + MAX; counter.className = 'photo-counter' + (count >= MAX ? ' full' : ''); }
-  // Show/hide upload area
-  var uploadArea = document.querySelector('[onclick="triggerPhotoInput(\'' + category + '\')"]');
-  if (uploadArea) uploadArea.style.display = count >= MAX ? 'none' : '';
-  // Render thumbs
-  grid.innerHTML = '';
-  photos[category].forEach(function(photo, idx) {
-    var t = document.createElement('div'); t.className = 'photo-thumb';
-    t.innerHTML = '<img src="' + photo.dataURL + '"><button class="remove-photo" onclick="removePhoto(\'' + category + '\',' + idx + ')">✕</button>';
-    grid.appendChild(t);
-  });
-}
-
-function removePhoto(cat, idx) {
-  photos[cat].splice(idx, 1);
-  renderPhotoPreviews(cat);
-}
-
-// Map screenshots — manual upload by user
-function handleMapShots(input) {
-  var MAX = 6;
-  var files = Array.from(input.files);
-  var remaining = MAX - mapScreenshots.length;
-  if (remaining <= 0) { showToast('Maximum 6 map screenshots allowed.'); input.value = ''; return; }
-  files.slice(0, remaining).forEach(function(f) {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      mapScreenshots.push({ dataURL: e.target.result, label: 'Map View #' + (mapScreenshots.length + 1) });
-      renderScreenshotsGallery();
-    };
-    reader.readAsDataURL(f);
-  });
-  input.value = '';
-}
-
-// ============================================================
-// TOAST
-// ============================================================
-function showToast(msg) {
-  var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
-  setTimeout(function(){ t.classList.remove('show'); },2400);
-}
-
-// ============================================================
-// HELPERS
-// ============================================================
-function getVal(id){ var el=document.getElementById(id); return el?el.value.trim():''; }
-function getRadio(name){ var el=document.querySelector('input[name="'+name+'"]:checked'); return el?el.value:''; }
-function fv(v,fb){ fb=fb||'<span style="color:#bbb;font-style:italic;">Not provided</span>'; return v||fb; }
-
-// ============================================================
-// WORD REPORT GENERATION (PizZip + docxtemplater + FileSaver)
-// Reads a local .docx template selected via #templateInput,
-// fills it with every form field on the page (keyed by element id,
-// e.g. {site-name}, {team1}), plus radio-group selections keyed by
-// their "name" attribute (e.g. {committee}, {cars-access}), and
-// triggers a download of the populated document.
-// ============================================================
-// ------------------------------------------------------------
-// Image tags — docxtemplater only fills text, so photo tags are
-// rendered as a unique sentinel string first, then the sentinel's
-// text run is swapped for a real embedded image directly in the
-// docx XML afterward.
-// ------------------------------------------------------------
-function gatherTemplateImageSources() {
-  var sources = {};
-  sources['photo-input-overview']  = (photos.overview  && photos.overview[0])  ? photos.overview[0].dataURL  : null;
-  sources['photo-input-entry']     = (photos.entry     && photos.entry[0])     ? photos.entry[0].dataURL     : null;
-  sources['photo-input-distrib']   = (photos.distrib   && photos.distrib[0])   ? photos.distrib[0].dataURL   : null;
-  sources['photo-input-safehaven'] = (photos.safehaven && photos.safehaven[0]) ? photos.safehaven[0].dataURL : null;
-  sources['photo-input-parking']   = (photos.parking   && photos.parking[0])   ? photos.parking[0].dataURL   : null;
-  // Map screenshots and sketch uploads share one underlying list in this app
-  // (both call handleMapShots) — first image -> map tag, second -> sketch tag.
-  sources['map-shots-input']     = mapScreenshots[0] ? mapScreenshots[0].dataURL : null;
-  sources['sketch-upload-input'] = mapScreenshots[1] ? mapScreenshots[1].dataURL : null;
-  return sources;
-}
-
-function imageSentinel(tag) { return '\u00A7IMG:' + tag + '\u00A7'; }
-
-function loadImageDimensions(dataURL) {
-  return new Promise(function (resolve) {
-    var img = new Image();
-    img.onload  = function () { resolve({ w: img.naturalWidth || 800, h: img.naturalHeight || 600 }); };
-    img.onerror = function () { resolve({ w: 800, h: 600 }); };
-    img.src = dataURL;
-  });
-}
-
-function dataURLToBytes(dataURL) {
-  var match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.*)$/.exec(dataURL || '');
-  if (!match) return null;
-  var binary = atob(match[2]);
-  var bytes = new Uint8Array(binary.length);
-  for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return { mime: match[1], bytes: bytes };
-}
-
-function extensionForMime(mime) {
-  var map = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp' };
-  return map[mime] || 'png';
-}
-
-// Replaces each image sentinel's text run with a real embedded picture,
-// directly patching document.xml / relationships / content types inside
-// the already-rendered docx zip. Tags the template doesn't actually use,
-// or photo slots with nothing uploaded, are skipped safely.
-async function embedImagesInZip(zip, imageSources) {
-  var tags = Object.keys(imageSources).filter(function (t) { return !!imageSources[t]; });
-  if (!tags.length) return;
-
-  var DISPLAY_WIDTH_EMU = 2743200; // 3 inches wide, height scales to match the photo's aspect ratio
-  var docXmlFile = zip.file('word/document.xml');
-  var relsFile   = zip.file('word/_rels/document.xml.rels');
-  var ctFile     = zip.file('[Content_Types].xml');
-  if (!docXmlFile || !relsFile || !ctFile) return; // unexpected docx structure — skip image embedding safely
-
-  var docXml  = docXmlFile.asText();
-  var relsXml = relsFile.asText();
-  var ctXml   = ctFile.asText();
-
-  var maxRid = 0;
-  (relsXml.match(/Id="rId(\d+)"/g) || []).forEach(function (m) {
-    var n = parseInt(m.replace(/Id="rId(\d+)"/, '$1'), 10);
-    if (n > maxRid) maxRid = n;
-  });
-
-  var extensionsAdded = {};
-  var newRelEntries = [];
-  var imgCounter = 0;
-
-  for (var t = 0; t < tags.length; t++) {
-    var tag = tags[t];
-    var sentinel = imageSentinel(tag);
-    if (docXml.indexOf(sentinel) === -1) continue; // this template doesn't contain that tag
-
-    var parsed = dataURLToBytes(imageSources[tag]);
-    if (!parsed) continue;
-    var dims = await loadImageDimensions(imageSources[tag]);
-    var ext = extensionForMime(parsed.mime);
-
-    imgCounter++;
-    var mediaName = 'image_acfgen_' + imgCounter + '.' + ext;
-    zip.file('word/media/' + mediaName, parsed.bytes, { binary: true });
-
-    maxRid++;
-    var rId = 'rId' + maxRid;
-    newRelEntries.push('<Relationship Id="' + rId + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/' + mediaName + '"/>');
-
-    if (!extensionsAdded[ext] && ctXml.indexOf('Extension="' + ext + '"') === -1) {
-      var mimeForCt = ext === 'jpg' ? 'image/jpeg' : ('image/' + ext);
-      ctXml = ctXml.replace('</Types>', '<Default Extension="' + ext + '" ContentType="' + mimeForCt + '"/></Types>');
-      extensionsAdded[ext] = true;
-    }
-
-    var cx = DISPLAY_WIDTH_EMU;
-    var cy = Math.round(DISPLAY_WIDTH_EMU * (dims.h / dims.w));
-    var docPrId = 90000 + imgCounter;
-
-    var drawingXml = '<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">'
-      + '<wp:extent cx="' + cx + '" cy="' + cy + '"/>'
-      + '<wp:docPr id="' + docPrId + '" name="Picture ' + docPrId + '"/>'
-      + '<wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr>'
-      + '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
-      + '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">'
-      + '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">'
-      + '<pic:nvPicPr><pic:cNvPr id="' + docPrId + '" name="Picture ' + docPrId + '"/><pic:cNvPicPr/></pic:nvPicPr>'
-      + '<pic:blipFill><a:blip r:embed="' + rId + '" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>'
-      + '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>'
-      + '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>';
-
-    var escapedSentinel = sentinel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    var sentinelRegex = new RegExp('<w:r(?:\\s[^>]*)?>(?:(?!</w:r>)[\\s\\S])*?' + escapedSentinel + '(?:(?!</w:r>)[\\s\\S])*?</w:r>');
-    if (sentinelRegex.test(docXml)) {
-      docXml = docXml.replace(sentinelRegex, drawingXml);
-    }
-  }
-
-  if (newRelEntries.length) {
-    relsXml = relsXml.replace('</Relationships>', newRelEntries.join('') + '</Relationships>');
-    zip.file('word/_rels/document.xml.rels', relsXml);
-    zip.file('[Content_Types].xml', ctXml);
-    zip.file('word/document.xml', docXml);
-  }
-}
-
-function gatherTemplateData() {
-  var data = {};
-
-  // Plain inputs / textareas / selects — tag name = element id
-  var fieldSelector = [
-    'input[type="text"][id]', 'input[type="date"][id]', 'input[type="time"][id]',
-    'input[type="tel"][id]',  'input[type="number"][id]',
-    'textarea[id]', 'select[id]'
-  ].join(', ');
-  document.querySelectorAll(fieldSelector).forEach(function (el) {
-    data[el.id] = el.value || '';
-  });
-
-  // Radio button groups — two tag styles are supported at once:
-  //  1) {groupName} -> the selected option's label text (e.g. {committee} -> "Yes")
-  //  2) {optionId}  -> "X" if that specific option is selected, else blank
-  //     (e.g. {committee-yes} -> "X" only when the "Yes" radio is checked —
-  //     this matches templates built as a checkbox-style table)
-  var seenGroups = {};
-  document.querySelectorAll('input[type="radio"][name]').forEach(function (el) {
-    if (el.id) data[el.id] = el.checked ? 'X' : '';
-    if (seenGroups[el.name]) return;
-    seenGroups[el.name] = true;
-    data[el.name] = getRadio(el.name);
-  });
-
-  return data;
-}
-
-function generateWordReport() {
-  var input = document.getElementById('templateInput');
-  var file  = input.files && input.files[0];
-  if (!file) { showToast('Please choose a .docx template first.'); return; }
-
-  if (typeof PizZip === 'undefined' || typeof window.docxtemplater === 'undefined' || typeof saveAs === 'undefined') {
-    showToast('PizZip / docxtemplater / FileSaver not loaded — check the <script> paths in <head>.');
-    input.value = '';
-    return;
-  }
-
-  var reader = new FileReader();
-
-  reader.onload = async function (e) {
-    try {
-      var content = e.target.result; // ArrayBuffer — read locally, no fetch involved
-      var zip = new PizZip(content);
-      var doc = new window.docxtemplater(zip, {
-        paragraphLoop: true,
-        linebreaks: true,
-        nullGetter: function () { return ''; } // blank instead of throwing on tags with no matching field
-      });
-
-      var imageSources = gatherTemplateImageSources();
-      var data = gatherTemplateData();
-      Object.keys(imageSources).forEach(function (tag) {
-        data[tag] = imageSources[tag] ? imageSentinel(tag) : '';
-      });
-
-      doc.render(data);
-      await embedImagesInZip(doc.getZip(), imageSources);
-
-      var out = doc.getZip().generate({
-        type: 'blob',
-        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      });
-
-      var siteName = (getVal('site-name') || 'Site').replace(/[^a-z0-9\-_]+/gi, '_');
-      var dateStr  = getVal('assess-date') || new Date().toISOString().slice(0, 10);
-      saveAs(out, 'ACF-Security-Assessment-' + siteName + '-' + dateStr + '.docx');
-
-      showToast('Word report generated!');
-    } catch (err) {
-      console.error(err);
-      var msg = 'Error generating Word report.';
-      if (err && err.properties && err.properties.errors && err.properties.errors.length) {
-        msg += ' ' + err.properties.errors
-          .map(function (e2) { return e2.properties && e2.properties.explanation; })
-          .filter(Boolean).join('; ');
-      } else if (err && err.message) {
-        msg += ' ' + err.message;
-      }
-      showToast(msg);
-    } finally {
-      input.value = ''; // allow re-selecting the same file later
-    }
-  };
-
-  reader.onerror = function () {
-    showToast('Could not read the selected file.');
-    input.value = '';
-  };
-
-  reader.readAsArrayBuffer(file);
-}
-
-// ============================================================
-// GENERATE REPORT
-// ============================================================
-function generateReport() {
-  var sketchImg   = capturedSketchDataURL||null;
-  var sketchEmpty = !capturedSketchDataURL;
-
-  // centre coords
-  var mainLat = getVal('main-lat'), mainLng = getVal('main-lng');
-  if (!mainLat && !mainLng) {
-    var pts = getAllPolyPoints();
-    if (pts.length) {
-      mainLat=(pts.reduce(function(s,p){return s+p.lat;},0)/pts.length).toFixed(6);
-      mainLng=(pts.reduce(function(s,p){return s+p.lng;},0)/pts.length).toFixed(6);
-    }
-  }
-  var mainCoords = (mainLat&&mainLng)?mainLat+', '+mainLng:'';
-
-  // photos — grouped by category
-  var photoLabels = {
-    overview:  '1 — Site Overview',
-    entry:     '2 — Camp Entry / Exit & Surroundings',
-    distrib:   '3 — Distribution Point (Entrance & Inside)',
-    safehaven: '4 — Safe Haven',
-    parking:   '5 — Parking Area'
-  };
-  var photosHTML = '';
-  var photoOrder = ['overview','entry','distrib','safehaven','parking'];
-  photoOrder.forEach(function(cat) {
-    if (!photos[cat] || !photos[cat].length) return;
-    photosHTML += '<div style="margin-bottom:14px;">'
-      + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray-500);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border);">'+photoLabels[cat]+'</div>'
-      + '<div class="report-photos-grid">'
-      + photos[cat].map(function(p,i){ return '<div class="report-photo-item"><img src="'+p.dataURL+'" alt="'+photoLabels[cat]+' '+(i+1)+'"><div class="report-photo-label">'+photoLabels[cat]+' · Photo '+(i+1)+'</div></div>'; }).join('')
-      + '</div></div>';
-  });
-  if (!photosHTML) photosHTML = '<p style="color:#bbb;font-style:italic;font-size:12px;margin-top:8px;">No photos attached.</p>';
-
-  // GPS corner rows
-  function gpsRow(c,ic){
-    var p=gpsPoints[c];
-    return '<div class="report-gps-item"><span class="corner">'+ic+' '+c+' Corner</span>'+(p?'<span class="coord">'+p.lat.toFixed(6)+', '+p.lng.toFixed(6)+'</span>':'<span class="coord" style="color:#bbb;font-style:italic;">Not captured</span>')+'</div>';
-  }
-
-  // drop pins table rows
-  var pinRows='';
-  if (dropPins.length) {
-    pinRows='<tr><td class="field-label">Additional Markers</td><td>'+
-      dropPins.map(function(p,i){ return pinEmoji(p.type)+' <strong>'+pinLabel(p.type)+'</strong>: '+p.lat.toFixed(6)+', '+p.lng.toFixed(6); }).join('<br>')+'</td></tr>';
-  }
-
-  // Named extra polygon points (edit-mode points)
-  var extraPolyRows = '';
-  if (extraPolyPoints.length) {
-    extraPolyRows = '<div class="report-h3" style="margin-top:14px;">Edit Mode — Additional Polygon Points</div>'
-      +'<table class="report-table"><thead><tr><th style="width:80px;">Point</th><th>Latitude</th><th>Longitude</th></tr></thead><tbody>'
-      + extraPolyPoints.map(function(p, i){
-          var name = p.name || ('P'+(i+1));
-          return '<tr><td class="field-label">'+name+'</td><td style="font-family:monospace;">'+p.lat.toFixed(6)+'</td><td style="font-family:monospace;">'+p.lng.toFixed(6)+'</td></tr>';
-        }).join('')
-      +'</tbody></table>';
-  }
-
-  // Multiple map screenshots
-  var mapShotsHTML = '';
-  if (mapScreenshots.length) {
-    mapShotsHTML = '<div class="report-h3" style="margin-top:22px;">Map View Screenshots ('+mapScreenshots.length+')</div>'
-      +'<p style="font-size:11px;color:#888;margin-bottom:8px;">Additional map views captured during assessment.</p>'
-      +'<div class="report-map-shots-grid">'
-      + mapScreenshots.map(function(s,i){
-          return '<div class="report-map-shot-item">'
-            +'<img src="'+s.dataURL+'" alt="'+s.label+'">'
-            +'<div class="report-map-shot-label">#'+(i+1)+' — '+s.label+'</div>'
-            +'<div class="report-map-shot-coords">Centre: '+s.center.lat.toFixed(5)+', '+s.center.lng.toFixed(5)+'  |  Zoom: '+s.zoom+'</div>'
-            +'</div>';
-        }).join('')
-      +'</div>';
-  }
-
-  var rDate = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
-  var rTime = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  var campDate=[getVal('camp-month'),getVal('camp-year')].filter(Boolean).join(' ');
-  var committee=getRadio('committee'), lrVal=getRadio('leader-resides'), signal=getRadio('signal');
-  var carsAccess=getRadio('cars-access'), landType=getRadio('land-type'), ngos=getRadio('ngos');
-  var uxo=getRadio('uxo'), shVal=getRadio('safe-haven');
-
-  var html = '\
-<div class="report-letterhead">\
-  <div class="report-acf-logo">ACF</div>\
-  <div class="report-title">\
-    <h1>Rapid Security Site Assessment</h1>\
-    <p>Action Against Hunger (ACF) — Security Operations</p>\
-    <p class="sop-ref">SOP Last updated: 12 October 2025 &nbsp;|&nbsp; Report generated: '+rDate+' at '+rTime+'</p>\
-  </div>\
-</div>\
-\
-<div class="report-h3" style="margin-top:0;">Section 1 — Assessment Team &amp; Identification</div>\
-<table class="report-table">\
-  <tr><td class="field-label">Team Members</td><td>'+fv([getVal('team1'),getVal('team2'),getVal('team3')].filter(Boolean).join('<br>'))+'</td></tr>\
-  <tr><td class="field-label">Site Name</td><td><strong>'+fv(getVal('site-name'))+'</strong></td></tr>\
-  <tr><td class="field-label">Date &amp; Time</td><td>'+fv(getVal('assess-date')+(getVal('assess-time')?' at '+getVal('assess-time'):''))+'</td></tr>\
-</table>\
-\
-<div class="report-h3">Section 2 — Camp Information</div>\
-<table class="report-table">\
-  <tr><td class="field-label">GPS Coordinates (Centre)</td><td><strong>'+fv(mainCoords)+'</strong></td></tr>\
-  <tr><td class="field-label">Date Camp Set Up</td><td>'+fv(campDate)+'</td></tr>\
-  <tr><td class="field-label">Community Leader &amp; Contact</td><td>'+fv(getVal('leader-name'))+(getVal('leader-phone')?'<br>&#128222; '+getVal('leader-phone'):'')+'</td></tr>\
-  <tr><td class="field-label">Committee?</td><td>'+fv(committee)+(getVal('committee-notes')?'<br><em>'+getVal('committee-notes')+'</em>':'')+'</td></tr>\
-  <tr><td class="field-label">Deputy &amp; Contact</td><td>'+fv(getVal('deputy-name'))+(getVal('deputy-phone')?'<br>&#128222; '+getVal('deputy-phone'):'')+'</td></tr>\
-  <tr><td class="field-label">Leader Resides in Camp?</td><td>'+fv(lrVal)+(getVal('leader-location')?'<br><em>Location: '+getVal('leader-location')+'</em>':'')+'</td></tr>\
-  <tr><td class="field-label">Households / Individuals</td><td>'+fv(getVal('num-households'))+(getVal('num-individuals')?' / '+getVal('num-individuals')+' individuals':'')+'</td></tr>\
-  <tr><td class="field-label">Camp Type</td><td>'+fv(getRadio('camp-type'))+(getVal('camp-type-desc')?'<br>'+getVal('camp-type-desc'):'')+'</td></tr>\
-</table>\
-\
-<div class="report-h3">Section 3 — Site Access, Land &amp; Communications</div>\
-<table class="report-table">\
-  <tr><td class="field-label">Vehicle Access</td><td>'+fv(carsAccess)+(getVal('cars-access-desc')?'<br>'+getVal('cars-access-desc'):'')+'</td></tr>\
-  <tr><td class="field-label">Open / Closed Land?</td><td>'+fv(landType)+(getVal('land-desc')?'<br>'+getVal('land-desc'):'')+'</td></tr>\
-  <tr><td class="field-label">Phone Signal &amp; Providers</td><td>'+fv(signal)+(getVal('signal-providers')?' — '+getVal('signal-providers'):'')+'</td></tr>\
-  <tr><td class="field-label">Other NGOs Present?</td><td>'+fv(ngos)+(getVal('ngo-desc')?'<br>'+getVal('ngo-desc'):'')+'</td></tr>\
-</table>\
-\
-<div class="report-h3">Section 4 — Site Observations <span style="font-size:11px;color:#E67E22;font-weight:400;">(observation only — not asked)</span></div>\
-<table class="report-table">\
-  <tr><td class="field-label">Nearest Airstrike</td><td>'+fv(getVal('obs-airstrike'))+'</td></tr>\
-  <tr><td class="field-label">Rubble / UXO Signs?</td><td>'+fv(uxo)+(getVal('obs-uxo')?'<br>'+getVal('obs-uxo'):'')+'</td></tr>\
-  <tr><td class="field-label">Sensitive Infrastructure</td><td>'+fv(getVal('obs-sensitive'))+'</td></tr>\
-  <tr><td class="field-label">Safe Haven Identified?</td><td>'+fv(shVal)+(getVal('obs-safehaven')?'<br>'+getVal('obs-safehaven'):'')+'</td></tr>\
-  <tr><td class="field-label">Behavioural Observations</td><td>'+fv(getVal('obs-behavioral'))+'</td></tr>\
-</table>\
-\
-<div class="report-h3">Section 5 — GPS Corner Points &amp; Site Map</div>\
-<div class="report-gps-grid">'+gpsRow('NW','↖')+gpsRow('NE','↗')+gpsRow('SE','↘')+gpsRow('SW','↙')+'</div>\
-<table class="report-table" style="margin-top:10px;"><tbody>'+pinRows+'</tbody></table>\
-'+extraPolyRows+'\
-\
-<div class="report-h3" style="margin-top:22px;">Section 6 — Site Photos</div>\
-'+photosHTML+'\
-\
-<div class="report-h3" style="margin-top:22px;">Section 7 — Site Map Sketch (Uploaded Screenshots)</div>\
-<p style="font-size:11px;color:#888;margin-bottom:6px;">Screenshots of the map taken by the assessor showing the polygon, corners, and markers.</p>\
-'+(mapScreenshots.length===0?'<p style="color:#bbb;font-style:italic;font-size:12px;">No map screenshots uploaded. Use Section 5 or Section 7 to upload screenshots from your phone.</p>':mapScreenshots.map(function(s,i){ return '<div style="margin-bottom:16px;"><img src="'+s.dataURL+'" style="width:100%;border:1px solid #DDD;border-radius:4px;display:block;"><div style="font-size:11px;font-weight:700;color:#555;margin-top:5px;">#'+(i+1)+' — '+s.label+'</div></div>'; }).join(''))+'\
-\
-<div class="report-h3" style="margin-top:22px;">Section 8 — Assessment Team Analysis &amp; Recommendations</div>\
-<div class="report-analysis-box">'+(getVal('analysis')||'<em style="color:#bbb;">No analysis entered.</em>')+'</div>\
-<p style="font-size:12px;font-weight:700;color:#3D3D3D;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.3px;">Mitigation Measures</p>\
-<div class="report-analysis-box">'+(getVal('mitigations')||'<em style="color:#bbb;">No mitigation measures entered.</em>')+'</div>\
-\
-<div class="report-h3">Section 9 — Head of Base Decision</div>\
-<div class="report-analysis-box mgmt-placeholder">🔒 To be completed by Head of Base after review</div>\
-<table class="report-table">\
-  <tr><td class="field-label">Decision</td><td><span style="color:#bbb;font-style:italic;">Pending management review</span></td></tr>\
-  <tr><td class="field-label">Head of Base Name</td><td>&nbsp;</td></tr>\
-  <tr><td class="field-label">Date of Decision</td><td>&nbsp;</td></tr>\
-</table>\
-\
-<div class="report-sig-block">\
-  <div><div class="report-sig-line">Signature — Assessment Team Lead</div></div>\
-  <div><div class="report-sig-line">Signature — Head of Base</div></div>\
-</div>\
-<div class="report-footer">\
-  <span>ACF Security Site Assessment &nbsp;&middot;&nbsp; <strong>CONFIDENTIAL</strong></span>\
-  <span>Generated: '+rDate+' '+rTime+'</span>\
-</div>';
-
-  document.getElementById('report-content').innerHTML = html;
-  document.getElementById('report-page').classList.add('visible');
-  document.getElementById('report-page').scrollTop = 0;
-}
-
-function closeReport() { document.getElementById('report-page').classList.remove('visible'); }
-
-// ============================================================
-// FULLSCREEN MAP SCREENSHOT (full-mode capture)
-function captureFullscreenScreenshot() { /* replaced by manual upload */ }
-function addMapScreenshot() { /* replaced by manual upload */ }
-
-function pushMapScreenshot(dataURL, label, center, zoom) {
-  mapScreenshots.push({ dataURL:dataURL, label:label });
-  renderScreenshotsGallery();
-}
-
-function removeMapScreenshot(idx) {
-  mapScreenshots.splice(idx,1);
-  // Re-number labels
-  mapScreenshots.forEach(function(s,i){ s.label = 'Map View #'+(i+1); });
-  renderScreenshotsGallery();
-}
-
-function renderScreenshotsGallery() {
-  var count = mapScreenshots.length;
-
-  // ---- Section 5 gallery ----
-  var wrap5  = document.getElementById('map-screenshots-gallery');
-  var grid5  = document.getElementById('screenshots-grid');
-  var cnt5   = document.getElementById('screenshot-count');
-  if (cnt5)  cnt5.textContent = count;
-  if (wrap5) wrap5.style.display = count ? '' : 'none';
-
-  // ---- Section 7 gallery ----
-  var wrap7  = document.getElementById('map-screenshots-gallery-s7');
-  var grid7  = document.getElementById('screenshots-grid-s7');
-  var cnt7   = document.getElementById('sketch-shot-counter');
-  if (wrap7) wrap7.style.display = count ? '' : 'none';
-  if (cnt7)  { cnt7.textContent = count + ' / 6 uploaded'; cnt7.className = 'photo-counter' + (count >= 6 ? ' full' : ''); }
-
-  // Hide upload areas if at max
-  var uploadArea5 = document.querySelector('[onclick="document.getElementById(\'map-shots-input\').click()"]');
-  var uploadArea7 = document.querySelector('[onclick="document.getElementById(\'sketch-upload-input\').click()"]');
-  if (uploadArea5) uploadArea5.style.display = count >= 6 ? 'none' : '';
-  if (uploadArea7) uploadArea7.style.display = count >= 6 ? 'none' : '';
-
-  var thumbsHTML = mapScreenshots.map(function(s, i) {
-    return '<div class="map-screenshot-item">'
-      + '<span class="map-screenshot-num">#' + (i + 1) + '</span>'
-      + '<img src="' + s.dataURL + '" alt="' + s.label + '">'
-      + '<button class="map-screenshot-del" onclick="removeMapScreenshot(' + i + ')" title="Remove">✕</button>'
-      + '<div class="map-screenshot-caption">' + s.label + '</div>'
-      + '</div>';
-  }).join('');
-
-  if (grid5) grid5.innerHTML = thumbsHTML;
-  if (grid7) grid7.innerHTML = thumbsHTML;
-}
-
-updateNavButtons();
-</script>
-</body>
-</html>
+    document.getElementById('stat-area').text
