@@ -1,55 +1,47 @@
-const CACHE_NAME = 'cool-cache';
+// This is the "Offline page" service worker
 
-// تنبيه: كودك الأصلي يحتوي على مجلدات عامة مثل '/assets/' و '/src/'
-// الدالة cache.addAll تحتاج إلى روابط ملفات حقيقية وصريحة لتتمكن من تحميلها وتخزينها، مثل:
-const PRECACHE_ASSETS = [
-    '/',
-    '/index.html',
-    '/libs/leaflet.css',
-    '/libs/leaflet.js',
-    '/libs/html2canvas.min.js',
-    '/libs/pizzip.min.js',
-    '/libs/docxtemplater.js',
-    '/libs/FileSaver.min.js',
-    '/manifest.json'
-];
+importScripts('https://storage.googleapis.com/workbox-cdn/releases/5.1.2/workbox-sw.js');
 
-// === كود 1: حدث الـ install ===
-self.addEventListener('install', event => {
-    console.log('Service Worker: جاري التثبيت وتخزين الملفات...');
-    event.waitUntil((async () => {
-        const cache = await caches.open(CACHE_NAME);
-        await cache.addAll(PRECACHE_ASSETS);
-        self.skipWaiting(); // تفعيل السيرفس وركر فوراً دون انتظار
-    })());
+const CACHE = "pwabuilder-page";
+
+// TODO: replace the following with the correct offline fallback page i.e.: const offlineFallbackPage = "offline.html";
+const offlineFallbackPage = "ToDo-replace-this-name.html";
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
-// === كود 2: حدث الـ activate ===
-self.addEventListener('activate', event => {
-    console.log('Service Worker: تم التنشيط والسيطرة على الصفحات.');
-    event.waitUntil(self.clients.claim());
+self.addEventListener('install', async (event) => {
+  event.waitUntil(
+    caches.open(CACHE)
+      .then((cache) => cache.add(offlineFallbackPage))
+  );
 });
 
-// === كود 3: حدث الـ fetch (مصحح بنيوياً) ===
-self.addEventListener('fetch', event => {
-    // تخطي الطلبات المحلية التي ليست http أو https (لحماية التطبيق من الانهيار)
-    if (!event.request.url.startsWith(self.location.origin) && !event.request.url.startsWith('https://')) {
-        return;
-    }
+if (workbox.navigationPreload.isSupported()) {
+  workbox.navigationPreload.enable();
+}
 
+self.addEventListener('fetch', (event) => {
+  if (event.request.mode === 'navigate') {
     event.respondWith((async () => {
-        const cache = await caches.open(CACHE_NAME);
+      try {
+        const preloadResp = await event.preloadResponse;
 
-        // البحث عن الملف في الكاش الخاص بنا
-        const cachedResponse = await cache.match(event.request);
-
-        // التحقق إذا كان الملف موجوداً في الكاش
-        if (cachedResponse !== undefined) {
-            // موجود بالكاش (Cache hit)، أرجعه فوراً ليعمل التطبيق أوفلاين
-            return cachedResponse;
-        } else {
-            // غير موجود، اطلبه من الشبكة والإنترنت
-            return fetch(event.request);
+        if (preloadResp) {
+          return preloadResp;
         }
+
+        const networkResp = await fetch(event.request);
+        return networkResp;
+      } catch (error) {
+
+        const cache = await caches.open(CACHE);
+        const cachedResp = await cache.match(offlineFallbackPage);
+        return cachedResp;
+      }
     })());
+  }
 });
