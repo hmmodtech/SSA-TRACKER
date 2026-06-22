@@ -1,10 +1,9 @@
-
 {
   "id": "acf-security-site-assessment",
   "name": "ACF Security Site Assessment",
-  "short_name": "ACF SSA",
+  "short_name": "ACF Assessment",
   "description": "Offline-capable security site assessment tool for ACF field teams in Gaza. Includes offline satellite mapping, GPS capture, and Word report generation.",
-  "start_url": "./index.html",
+  "start_url": "./acf-security-assessment.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
@@ -27,4 +26,3 @@
     }
   ]
 }
-
