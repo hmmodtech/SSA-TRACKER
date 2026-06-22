@@ -6,7 +6,7 @@
 //     app — this worker mainly reads from it, with a network-fallback-and-cache
 //     safety net for any tile that wasn't pre-downloaded.
 
-var APP_SHELL_CACHE = 'acf-app-shell-v1';
+var APP_SHELL_CACHE = 'acf-app-shell-v2';
 var TILE_CACHE_NAME = 'acf-gaza-satellite-tiles-v1';
 
 var APP_SHELL_FILES = [
@@ -75,17 +75,19 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  // App shell (same-origin) — cache first, network fallback, refresh cache
+  // App shell (same-origin) — network FIRST, so updates you upload to GitHub
+  // show up immediately whenever there's a connection. Falls back to the
+  // last cached copy only when there's genuinely no network (true offline use).
   if (url.origin === self.location.origin) {
     event.respondWith(
-      caches.match(req).then(function (cached) {
-        return cached || fetch(req).then(function (resp) {
-          if (resp && resp.ok) {
-            var copy = resp.clone();
-            caches.open(APP_SHELL_CACHE).then(function (cache) { cache.put(req, copy); });
-          }
-          return resp;
-        });
+      fetch(req).then(function (resp) {
+        if (resp && resp.ok) {
+          var copy = resp.clone();
+          caches.open(APP_SHELL_CACHE).then(function (cache) { cache.put(req, copy); });
+        }
+        return resp;
+      }).catch(function () {
+        return caches.match(req);
       })
     );
     return;
