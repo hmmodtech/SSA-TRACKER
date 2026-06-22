@@ -2546,5 +2546,10 @@ updateNavButtons();
 <datalist id="site-name-history"></datalist>
 <datalist id="leader-name-history"></datalist>
 <datalist id="deputy-name-history"></datalist>
+     <script>
+  if (typeof navigator.serviceWorker !== 'undefined') {
+    navigator.serviceWorker.register('sw.js')
+  }
+</script>
 </body>
 </html>
