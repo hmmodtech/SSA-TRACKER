@@ -6,7 +6,7 @@ var APP_SHELL_CACHE = 'acf-app-shell-v3';
 var TILE_CACHE_NAME  = 'acf-gaza-satellite-tiles-v1'; // keep same name so downloaded tiles survive updates
 
 var APP_SHELL_FILES = [
-  './acf-security-assessment.html',
+  './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
