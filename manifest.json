@@ -1,6 +1,4 @@
-bash
 
-cat > /home/claude/manifest.json << 'EOF'
 {
   "id": "acf-security-site-assessment",
   "name": "ACF Security Site Assessment",
@@ -29,5 +27,4 @@ cat > /home/claude/manifest.json << 'EOF'
     }
   ]
 }
-EOF
-echo "done"
+
