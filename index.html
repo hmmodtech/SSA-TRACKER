@@ -2546,9 +2546,19 @@ updateNavButtons();
 <datalist id="site-name-history"></datalist>
 <datalist id="leader-name-history"></datalist>
 <datalist id="deputy-name-history"></datalist>
-     <script>
-  if (typeof navigator.serviceWorker !== 'undefined') {
-    navigator.serviceWorker.register('sw.js')
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      // إخبار المتصفح بمكان ملف الـ sw.js لتشغيله في الخلفية
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => {
+          console.log('تم تسجيل الـ Service Worker بنجاح في النطاق:', reg.scope);
+        })
+        .catch(err => {
+          console.error('فشل تسجيل الـ Service Worker:', err);
+        });
+    });
   }
 </script>
 </body>
