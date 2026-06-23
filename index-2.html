@@ -1,0 +1,2657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ACF Security Site Assessment</title>
+
+<!-- Diagnostic: catch any JS errors and show them visibly on screen -->
+<script>
+window.__loadErrors = [];
+window.addEventListener('error', function(e) {
+  window.__loadErrors.push((e.filename||'').split('/').pop() + ' line ' + e.lineno + ': ' + e.message);
+  showDiagBanner();
+});
+function showDiagBanner() {
+  var b = document.getElementById('__diagBanner');
+  if (!b) { b = document.createElement('div'); b.id='__diagBanner';
+    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#c0392b;color:white;padding:10px;font-size:13px;font-family:monospace;white-space:pre-wrap;';
+    document.body && document.body.prepend(b); }
+  b.textContent = '⚠ JS ERRORS:\n' + window.__loadErrors.join('\n');
+}
+</script>
+
+<link rel="stylesheet" href="libs/leaflet.css"/>
+<script src="libs/leaflet.js" onerror="window.__loadErrors.push('FAILED: leaflet.js');showDiagBanner()"></script>
+<script src="libs/html2canvas.min.js" onerror="window.__loadErrors.push('FAILED: html2canvas.min.js');showDiagBanner()"></script>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#2471A3"/>
+<script src="libs/pizzip.min.js" onerror="window.__loadErrors.push('FAILED: pizzip.min.js');showDiagBanner()"></script>
+<script src="libs/docxtemplater.js" onerror="window.__loadErrors.push('FAILED: docxtemplater.js');showDiagBanner()"></script>
+<script src="libs/FileSaver.min.js" onerror="window.__loadErrors.push('FAILED: FileSaver.min.js');showDiagBanner()"></script>
+
+<style>
+:root {
+  --red:#2471A3; --red-dark:#154360; --red-light:#D4E6F1;
+  --gray-900:#1A1A1A; --gray-700:#3D3D3D; --gray-500:#6B6B6B;
+  --gray-300:#CCCCCC; --gray-100:#F5F5F5; --gray-50:#FAFAFA;
+  --white:#FFFFFF; --border:#DCDCDC;
+  --shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.06);
+  --radius:6px; --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--gray-100);color:var(--gray-900);font-size:14px;line-height:1.5;}
+
+.app-header{background:var(--red);color:var(--white);padding:14px 16px;position:sticky;top:0;z-index:200;box-shadow:0 2px 6px rgba(0,0,0,0.2);display:flex;align-items:center;gap:12px;}
+.app-header .logo-block{background:var(--white);color:var(--red);font-weight:900;font-size:16px;letter-spacing:-0.5px;padding:4px 8px;border-radius:3px;line-height:1;flex-shrink:0;}
+.app-header .title-block h1{font-size:15px;font-weight:700;letter-spacing:0.2px;}
+.app-header .title-block p{font-size:11px;opacity:0.85;margin-top:1px;}
+
+.progress-bar{background:var(--white);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.progress-bar::-webkit-scrollbar{display:none;}
+.prog-step{flex-shrink:0;padding:10px 14px;font-size:11px;font-weight:600;color:var(--gray-500);border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;transition:all 0.15s;user-select:none;}
+.prog-step.active{color:var(--red);border-bottom-color:var(--red);}
+.prog-step.done{color:var(--gray-700);}
+.prog-step .step-num{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--gray-300);color:var(--white);font-size:10px;margin-right:5px;font-weight:700;}
+.prog-step.active .step-num{background:var(--red);}
+.prog-step.done .step-num{background:#27AE60;}
+
+.main{padding:16px;max-width:640px;margin:0 auto;padding-bottom:80px;}
+
+.section-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden;}
+.section-header{background:var(--red);color:var(--white);padding:12px 16px;display:flex;align-items:center;gap:10px;}
+.section-header h2{font-size:13px;font-weight:700;letter-spacing:0.3px;text-transform:uppercase;}
+.section-header .sec-icon{font-size:16px;flex-shrink:0;}
+.section-body{padding:16px;}
+
+.field-group{margin-bottom:14px;}
+.field-group:last-child{margin-bottom:0;}
+label{display:block;font-size:12px;font-weight:600;color:var(--gray-700);margin-bottom:5px;letter-spacing:0.1px;}
+label .hint{display:block;font-weight:400;font-style:italic;color:var(--gray-500);font-size:11px;margin-top:2px;line-height:1.4;}
+label .required{color:var(--red);margin-left:2px;}
+input[type="text"],input[type="date"],input[type="time"],input[type="tel"],input[type="number"],select,textarea{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:14px;font-family:var(--font);background:var(--white);color:var(--gray-900);transition:border-color 0.15s;appearance:none;-webkit-appearance:none;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(192,57,43,0.1);}
+textarea{min-height:80px;resize:vertical;}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B6B6B' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+.radio-group{display:flex;gap:8px;flex-wrap:wrap;}
+.radio-btn{position:relative;}
+.radio-btn input{position:absolute;opacity:0;width:0;height:0;}
+.radio-btn label{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1.5px solid var(--border);border-radius:20px;cursor:pointer;font-size:13px;font-weight:500;color:var(--gray-700);background:var(--white);transition:all 0.15s;margin-bottom:0;}
+.radio-btn input:checked+label{background:var(--red-light);border-color:var(--red);color:var(--red-dark);}
+
+/* MAP */
+.map-wrap{position:relative;border:2px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:12px;}
+#leaflet-map{height:320px;width:100%;}
+.map-fullscreen-btn{position:absolute;top:10px;right:10px;z-index:500;background:white;border:2px solid rgba(0,0,0,0.3);border-radius:4px;width:34px;height:34px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.3);}
+.map-fullscreen-btn:active{background:var(--gray-100);}
+
+/* Fullscreen map overlay */
+#map-fullscreen-overlay{display:none;position:fixed;inset:0;z-index:1000;background:#000;flex-direction:column;}
+#map-fullscreen-overlay.active{display:flex;}
+#map-fs-inner{flex:1;position:relative;}
+#leaflet-map-fs{width:100%;height:100%;}
+.map-fs-close{position:absolute;top:12px;right:12px;z-index:600;background:rgba(0,0,0,0.7);color:white;border:none;border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);}
+.map-fs-bar{background:#1A1A1A;padding:10px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.map-fs-bar .map-btn{padding:7px 12px;font-size:12px;}
+
+.map-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.map-btn{padding:8px 14px;border-radius:var(--radius);border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;font-family:var(--font);}
+.map-btn.secondary{background:var(--gray-100);color:var(--gray-700);border:1.5px solid var(--border);}
+.map-btn.active{background:var(--red);color:var(--white);border-color:var(--red);}
+.map-btn.pin-sh{background:#27AE60;color:white;}
+.map-btn.pin-sh.active{background:#1E8449;}
+.map-btn.pin-park{background:#8E44AD;color:white;}
+.map-btn.pin-park.active{background:#6C3483;}
+.map-btn.pin-uxo{background:#E67E22;color:white;}
+.map-btn.pin-uxo.active{background:#CA6F1E;}
+.map-btn:active{opacity:0.85;transform:scale(0.98);}
+
+.map-layer-toggle{display:flex;background:var(--gray-100);border-radius:var(--radius);padding:3px;gap:2px;margin-bottom:10px;border:1px solid var(--border);}
+.layer-btn{flex:1;padding:6px 8px;border:none;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;background:transparent;color:var(--gray-500);transition:all 0.15s;font-family:var(--font);}
+.layer-btn.active{background:var(--white);color:var(--red);box-shadow:var(--shadow);}
+.offline-map-panel{background:var(--gray-50);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px;}
+.offline-map-status{font-size:12px;color:var(--gray-700);margin-bottom:8px;}
+.offline-map-status.ready{color:#1E8449;font-weight:700;}
+.offline-map-status.partial{color:#CA6F1E;font-weight:700;}
+.offline-map-row{display:flex;gap:8px;align-items:center;}
+.offline-map-row .map-btn{flex:1;}
+.offline-map-progress-wrap{margin-top:8px;display:none;}
+.offline-map-progress-bar{background:var(--gray-300);border-radius:6px;height:8px;overflow:hidden;}
+.offline-map-progress-fill{background:var(--red);height:100%;width:0%;transition:width 0.2s;}
+.offline-map-progress-text{font-size:11px;color:var(--gray-500);margin-top:4px;}
+
+.gps-points-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+.gps-point{background:var(--gray-50);border:1.5px solid var(--border);border-radius:var(--radius);padding:8px 10px;}
+.gps-point.set{border-color:#27AE60;background:#F0FFF4;}
+.gps-point label{font-size:11px;color:var(--gray-500);margin-bottom:3px;}
+.gps-point .coords{font-size:11px;font-family:monospace;color:var(--gray-900);font-weight:600;}
+.gps-point .coords.empty{color:var(--gray-300);font-style:italic;font-weight:400;}
+.gps-clear-btn{font-size:10px;color:var(--red);background:none;border:none;cursor:pointer;padding:2px 4px;margin-top:2px;font-family:var(--font);}
+
+.map-instruction{background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--radius);padding:8px 12px;font-size:12px;color:#7D6608;margin-bottom:10px;display:flex;align-items:flex-start;gap:6px;line-height:1.5;}
+.map-instruction .icon{flex-shrink:0;font-size:14px;}
+.capturing-badge{display:none;background:var(--red);color:var(--white);font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;margin-left:6px;}
+.capturing-badge.visible{display:inline-block;}
+
+/* extra pin list */
+.pin-list{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
+.pin-item{display:flex;align-items:center;gap:8px;font-size:12px;background:var(--gray-50);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px;}
+.pin-item .pin-label{flex:1;font-weight:600;}
+.pin-item .pin-coords{font-family:monospace;font-size:11px;color:var(--gray-500);}
+.pin-item .pin-del{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 4px;font-family:var(--font);}
+
+/* edit-mode banner */
+.edit-banner{display:none;background:#1A5276;color:white;font-size:12px;font-weight:700;padding:8px 12px;border-radius:var(--radius);margin-bottom:8px;text-align:center;}
+.edit-banner.on{display:block;}
+
+.photo-upload-area{border:2px dashed var(--border);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--gray-50);position:relative;}
+.photo-btn-row{display:flex;gap:10px;margin-bottom:8px;}
+.photo-btn{flex:1;padding:14px 8px;border-radius:var(--radius);border:2px solid var(--border);background:var(--gray-50);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:5px;transition:all 0.15s;}
+.photo-btn:active{background:var(--red-light);border-color:var(--red);}
+.photo-btn .pb-icon{font-size:26px;}
+.photo-btn .pb-label{font-size:12px;color:var(--gray-700);}
+.photo-btn .pb-sub{font-size:10px;color:var(--gray-500);}
+.photo-upload-area:hover{border-color:var(--red);background:var(--red-light);}
+.photo-upload-area input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.photo-upload-area .upload-icon{font-size:28px;margin-bottom:6px;}
+.photo-upload-area .upload-label{font-size:13px;font-weight:600;color:var(--gray-700);}
+.photo-upload-area .upload-sub{font-size:11px;color:var(--gray-500);margin-top:3px;}
+.photo-preview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
+.photo-thumb{position:relative;aspect-ratio:1;border-radius:4px;overflow:hidden;border:1px solid var(--border);}
+.photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.photo-thumb .remove-photo{position:absolute;top:3px;right:3px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+.field-divider{height:1px;background:var(--gray-100);margin:16px 0;}
+
+.nav-buttons{display:flex;gap:10px;padding:12px 16px;background:var(--white);border-top:1px solid var(--border);position:fixed;bottom:0;left:0;right:0;z-index:150;}
+.btn{flex:1;padding:13px 16px;border-radius:var(--radius);border:none;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;font-family:var(--font);letter-spacing:0.2px;}
+.btn:active{transform:scale(0.98);opacity:0.9;}
+.btn-primary{background:var(--red);color:var(--white);}
+.btn-secondary{background:var(--gray-100);color:var(--gray-700);border:1.5px solid var(--border);flex:0 0 auto;padding-left:20px;padding-right:20px;}
+.btn-generate{background:var(--gray-900);color:var(--white);}
+
+.page{display:none;}
+.page.active{display:block;}
+
+.step-page-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.step-page-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+.info-box{background:#EBF5FB;border:1px solid #AED6F1;border-radius:var(--radius);padding:10px 12px;font-size:12px;color:#1A5276;margin-bottom:12px;line-height:1.5;}
+.info-box strong{display:block;margin-bottom:3px;font-size:12px;}
+.warn-box{background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--radius);padding:10px 12px;font-size:12px;color:#7D6608;margin-bottom:12px;line-height:1.5;}
+.warn-box strong{display:block;margin-bottom:3px;}
+.mgmt-box{background:#D4E6F1;border:2px solid var(--red);border-radius:var(--radius);padding:24px 16px;text-align:center;color:var(--red-dark);}
+.mgmt-box .mgmt-icon{font-size:40px;margin-bottom:12px;}
+.mgmt-box h3{font-size:15px;font-weight:800;margin-bottom:6px;}
+.mgmt-box p{font-size:12px;line-height:1.6;color:var(--gray-700);}
+
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--gray-900);color:var(--white);padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;opacity:0;transition:all 0.3s;z-index:9999;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* REPORT */
+#report-page{display:none;position:fixed;inset:0;background:var(--gray-100);z-index:300;overflow-y:auto;}
+#report-page.visible{display:block;}
+.report-toolbar{background:var(--gray-900);color:var(--white);padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10;}
+.report-toolbar h2{font-size:14px;flex:1;}
+.report-tool-btn{padding:8px 16px;border-radius:var(--radius);border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);}
+.report-tool-btn.print{background:var(--white);color:var(--gray-900);}
+.report-tool-btn.word{background:#2980B9;color:var(--white);}
+.report-tool-btn.close{background:transparent;color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.3);}
+.report-doc{max-width:780px;margin:20px auto;background:var(--white);box-shadow:0 4px 20px rgba(0,0,0,0.1);padding:36px 40px;font-family:Arial,sans-serif;font-size:13px;line-height:1.5;}
+.report-letterhead{display:flex;align-items:flex-start;gap:20px;padding-bottom:18px;border-bottom:3px solid var(--red);margin-bottom:20px;}
+.report-acf-logo{background:var(--red);color:var(--white);font-size:28px;font-weight:900;padding:10px 14px;border-radius:4px;letter-spacing:-1px;line-height:1;flex-shrink:0;}
+.report-title h1{font-size:18px;font-weight:800;color:var(--gray-900);letter-spacing:0.5px;text-transform:uppercase;}
+.report-title p{font-size:12px;color:var(--gray-500);margin-top:4px;}
+.report-title .sop-ref{font-size:11px;color:var(--gray-500);margin-top:2px;font-style:italic;}
+.report-table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:12px;}
+.report-table th{background:var(--red);color:var(--white);padding:8px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;}
+.report-table td{padding:8px 12px;border:1px solid var(--border);vertical-align:top;line-height:1.5;}
+.report-table tr:nth-child(even) td{background:var(--gray-50);}
+.report-table .field-label{font-weight:700;color:var(--gray-700);width:42%;background:#F8F8F8!important;font-size:11.5px;}
+.report-table .field-label .hint{font-weight:400;font-style:italic;color:var(--gray-500);font-size:10.5px;display:block;margin-top:2px;}
+.report-h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--red-dark);margin-bottom:10px;padding-bottom:5px;border-bottom:1.5px solid var(--red-light);margin-top:22px;}
+.report-analysis-box{border:1.5px solid var(--border);border-radius:4px;padding:14px 16px;margin-bottom:16px;min-height:80px;font-size:13px;line-height:1.6;white-space:pre-wrap;}
+.report-analysis-box.hob{border-left:4px solid var(--red);background:#FFF8F7;}
+.report-analysis-box.mgmt-placeholder{background:#D4E6F1;border:2px dashed var(--red);color:var(--red-dark);font-style:italic;text-align:center;padding:30px;}
+.report-photos-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:10px;}
+.report-photo-item img{width:100%;height:160px;object-fit:cover;border:1px solid var(--border);border-radius:4px;display:block;}
+.report-photo-label{font-size:11px;font-weight:600;color:var(--gray-700);margin-top:5px;}
+.photo-counter{font-size:11px;font-weight:700;color:var(--gray-500);margin-top:6px;text-align:right;}
+.photo-counter.full{color:#2471A3;}
+.report-sketch-img{width:100%;border:1px solid var(--border);border-radius:4px;margin-top:10px;}
+
+/* Map Screenshots Gallery */
+.map-screenshots-gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px;}
+.map-screenshot-item{position:relative;border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--gray-50);}
+.map-screenshot-item img{width:100%;display:block;aspect-ratio:16/9;object-fit:cover;}
+.map-screenshot-caption{padding:6px 8px;font-size:11px;font-weight:600;color:var(--gray-700);background:var(--gray-50);border-top:1px solid var(--border);}
+.map-screenshot-del{position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--font);}
+.map-screenshot-del:hover{background:var(--red);}
+.map-screenshot-num{position:absolute;top:4px;left:4px;background:rgba(192,57,43,0.85);color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;}
+
+/* Fullscreen screenshot button */
+.map-fs-screenshot-btn{padding:7px 12px;font-size:12px;font-weight:700;background:#27AE60;color:white;border:none;border-radius:var(--radius);cursor:pointer;font-family:var(--font);}
+.map-fs-screenshot-btn:active{opacity:0.85;}
+
+/* Report map screenshots grid */
+.report-map-shots-grid{display:grid;grid-template-columns:1fr;gap:18px;margin-top:10px;}
+.report-map-shot-item img{width:100%;border:1px solid var(--border);border-radius:4px;display:block;}
+.report-map-shot-label{font-size:12px;font-weight:700;color:var(--gray-700);margin-top:5px;}
+.report-map-shot-coords{font-size:11px;font-family:monospace;color:var(--gray-500);margin-top:2px;}
+.report-gps-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px;}
+.report-gps-item{background:var(--gray-50);border:1px solid var(--border);padding:8px 12px;border-radius:4px;font-size:12px;}
+.report-gps-item .corner{font-weight:700;color:var(--gray-700);font-size:11px;display:block;margin-bottom:3px;}
+.report-gps-item .coord{font-family:monospace;font-size:12px;}
+.report-sig-block{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:30px;}
+.report-sig-line{border-top:1.5px solid var(--gray-700);padding-top:6px;font-size:11px;color:var(--gray-500);margin-top:30px;}
+.report-footer{border-top:2px solid var(--red);margin-top:30px;padding-top:12px;display:flex;justify-content:space-between;font-size:11px;color:var(--gray-500);}
+.decision-badge{display:inline-block;padding:4px 12px;border-radius:4px;font-weight:800;font-size:13px;letter-spacing:0.3px;}
+.decision-approved{background:#EAFAF1;color:#1E8449;border:1px solid #A9DFBF;}
+.decision-conditional{background:#FEF5E7;color:#D35400;border:1px solid #FAD7A0;}
+.decision-rejected{background:#D4E6F1;color:#154360;border:1px solid #7FB3D5;}
+.decision-pending{background:#EBF5FB;color:#1A5276;border:1px solid #AED6F1;}
+
+@media print{
+  #report-page{position:static;overflow:visible;background:white;}
+  .report-toolbar{display:none;}
+  .report-doc{box-shadow:none;margin:0;padding:20px;}
+  .report-photos-grid{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:480px){
+  .report-doc{padding:20px 16px;}
+  .report-letterhead{flex-direction:column;gap:10px;}
+  .report-photos-grid{grid-template-columns:1fr;}
+  .report-gps-grid{grid-template-columns:1fr;}
+  .report-sig-block{grid-template-columns:1fr;gap:20px;}
+}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="logo-block">ACF</div>
+  <div class="title-block">
+    <h1>Security Site Assessment</h1>
+    <p>Rapid Assessment · SOP — Last update: 12 Oct 2025</p>
+  </div>
+</div>
+
+<div class="progress-bar" id="progress-bar">
+  <div class="prog-step active" onclick="goToPage(0)" data-page="0"><span class="step-num">1</span>Team</div>
+  <div class="prog-step" onclick="goToPage(1)" data-page="1"><span class="step-num">2</span>Camp</div>
+  <div class="prog-step" onclick="goToPage(2)" data-page="2"><span class="step-num">3</span>Access</div>
+  <div class="prog-step" onclick="goToPage(3)" data-page="3"><span class="step-num">4</span>Observations</div>
+  <div class="prog-step" onclick="goToPage(4)" data-page="4"><span class="step-num">8</span>Analysis</div>
+  <div class="prog-step" onclick="goToPage(5)" data-page="5"><span class="step-num">9</span>Decision</div>
+  <div class="prog-step" onclick="goToPage(6)" data-page="6"><span class="step-num">5</span>GPS &amp; Map</div>
+  <div class="prog-step" onclick="goToPage(7)" data-page="7"><span class="step-num">6</span>Photos</div>
+  <div class="prog-step" onclick="goToPage(8)" data-page="8"><span class="step-num">7</span>Sketch</div>
+</div>
+
+<div class="main">
+
+<!-- PAGE 0: Team & Site (Sections 1) -->
+<div class="page active" id="page-0">
+  <div class="step-page-title">Section 1 · Assessment Team &amp; Site Identification</div>
+  <div class="section-card">
+    <div class="section-header"><span class="sec-icon">📋</span><h2>Assessment Team Members</h2></div>
+    <div class="section-body">
+      <div class="info-box"><strong>ACF Protocol</strong>Two persons must conduct each assessment, coordinated by the Security Officer.</div>
+      <div id="team-member-list"></div>
+      <button type="button" class="map-btn secondary" onclick="addTeamMember()" style="margin-top:6px;">+ Add Team Member</button>
+    </div>
+  </div>
+  <div class="section-card">
+    <div class="section-header"><span class="sec-icon">📍</span><h2>Site Identification</h2></div>
+    <div class="section-body">
+      <div class="field-group"><label>Site Name <span class="required">*</span></label><input type="text" id="site-name" list="site-name-history" placeholder="Official name of the site / camp"></div>
+      <div class="row-2">
+        <div class="field-group"><label>Date of Assessment <span class="required">*</span></label><input type="date" id="assess-date"></div>
+        <div class="field-group"><label>Time</label><input type="time" id="assess-time"></div>
+      </div>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:6px;">
+    <button type="button" onclick="confirmClearDraft()" style="background:none;border:none;color:var(--gray-500);font-size:11px;text-decoration:underline;cursor:pointer;font-family:var(--font);">🗑 Clear saved draft &amp; start fresh</button>
+  </div>
+</div>
+
+<!-- PAGE 1: Camp Info (Section 2) -->
+<div class="page" id="page-1">
+  <div class="step-page-title">Section 2 · Camp Information</div>
+  <div class="section-card">
+    <div class="section-header"><span class="sec-icon">🏕️</span><h2>Camp Details</h2></div>
+    <div class="section-body">
+      <div class="field-group">
+        <label>Camp GPS Coordinates</label>
+        <div class="row-2">
+          <input type="text" id="camp-gps" placeholder="Latitude, Longitude" readonly style="background:var(--gray-50);">
+          <button type="button" class="map-btn secondary" onclick="captureCampGPS()" style="flex:0 0 auto;">📍 Get Current Location</button>
+        </div>
+      </div>
+      <div class="field-divider"></div>
+      <div class="field-group">
+        <label>Date Camp Was Set Up<span class="hint">Indicates level of control and organization.</span></label>
+        <div class="row-2">
+          <select id="camp-month"><option value="">Month</option><option>January</option><option>February</option><option>March</option><option>April</option><option>May</option><option>June</option><option>July</option><option>August</option><option>September</option><option>October</option><option>November</option><option>December</option></select>
+          <input type="number" id="camp-year" placeholder="Year" min="2000" max="2035">
+        </div>
+      </div>
+      <div class="field-divider"></div>
+      <div class="field-group"><label>Community Leader Name <span class="required">*</span></label><input type="text" id="leader-name" list="leader-name-history" placeholder="Full name"></div>
+      <div class="field-group"><label>Community Leader Phone</label><input type="tel" id="leader-phone" placeholder="+XXX XXX XXX XXXX"></div>
+      <div class="field-divider"></div>
+      <div class="field-group">
+        <label>Is there a committee in the camp?<span class="hint">Indicates if the community leader has full control.</span></label>
+        <div class="radio-group">
+          <div class="radio-btn"><input type="radio" name="committee" id="committee-yes" value="Yes"><label for="committee-yes">✓ Yes</label></div>
+          <div class="radio-btn"><input type="radio" name="committee" id="committee-no" value="No"><label for="committee-no">✗ No</label></div>
+          <div class="radio-btn"><input type="radio" name="committee" id="committee-unknown" value="Unknown"><label for="committee-unknown">? Unknown</label></div>
+        </div>
+      </div>
+      <div id="committee-followup" style="display:none;">
+        <div class="row-2">
+          <div class="field-group"><label>Total Committee Members</label><input type="number" id="committee-total" min="0" placeholder="e.g. 7"></div>
+          <div class="field-group"><label>Males / Females</label>
+            <div class="row-2">
+              <input type="number" id="committee-males" min="0" placeholder="Males">
+              <input type="number" id="committee-females" min="0" placeholder="Females">
+            </div>
+          </div>
+        </div>
+        <div class="field-group"><label>Comments</label><textarea id="committee-notes" rows="2" placeholder="Structure, additional contacts..."></textarea></div>
+      </div>
+      <div class="field-divider"></div>
+      <div class="field-group"><label>Camp Backup Representative (Deputy)</label><input type="text" id="deputy-name" list="deputy-name-history" placeholder="Full name"></div>
+      <div class="field-group"><label>Deputy Phone</label><input type="tel" id="deputy-phone" placeholder="+XXX XXX XXX XXXX"></div>
+      <div class="field-divider"></div>
+      <div class="field-group">
+        <label>Does the community leader reside in the camp?<span class="hint">Facilitates security checks prior to arrival.</span></label>
+        <div class="radio-group">
+          <div class="radio-btn"><input type="radio" name="leader-resides" id="lr-yes" value="Yes"><label for="lr-yes">✓ Yes</label></div>
+          <div class="radio-btn"><input type="radio" name="leader-resides" id="lr-no" value="No"><label for="lr-no">✗ No</label></div>
+        </div>
+      </div>
+      <div id="leader-location-wrap" style="display:none;">
+        <div class="field-group"><label>Location and distance</label><input type="text" id="leader-location" placeholder="Location / approximate distance"></div>
+      </div>
+      <div class="field-divider"></div>
+      <div class="row-2">
+        <div class="field-group"><label>Number of Households</label><input type="number" id="num-households" placeholder="e.g. 350" min="0"></div>
+        <div class="field-group"><label>Number of Individuals<span class="hint">Unknown: HH × 5.7</span></label><input type="number" id="num-individuals" placeholder="e.g. 1995" min="0"></div>
+      </div>
+      <div class="field-divider"></div>
+      <div class="field-group">
+        <label>Camp Type<span class="hint">Stand-alone or part of a group?</span></label>
+        <div class="radio-group" style="margin-bottom:8px;">
+          <div class="radio-btn"><input type="radio" name="camp-type" id="ct-standalone" value="Stand-alone"><label for="ct-standalone">Stand-alone</label></div>
+          <div class="radio-btn"><input type="radio" name="camp-type" id="ct-group" value="Part of a group"><label for="ct-group">Part of a group</label></div>
+        </div>
+      </div>
+      <div id="camp-type-followup" style="display:none;">
+        <div class="field-group"><label>Number of Sectors</label><input type="number" id="camp-sectors" min="0" placeholder="e.g. 4"></div>
+        <div class="field-group"><label>Comments<span class="hint">Main community leader's name &amp; contact (in charge of all sectors)</span></label><textarea id="camp-type-desc" rows="2" placeholder="Main leader name &amp; contact..."></textarea></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 2: Access & Comms (Section 3) -->
+<div class="page" id="page-2">
+  <div class="step-page-title">Section 3 · Site Access, Land &amp; Communications</div>
+  <div class="section-card">
+    <div class="section-header"><span class="sec-icon">🚗</span><h2>Vehicle Access</h2></div>
+    <div class="section-body">
+      <div class="field-group">
+        <label>Can cars get into the site?<span class="hint">How many? Can a truck get inside? Road conditions?</span></label>
+        <div class="radio-group" style="margin-bottom:8px;">
+          <div class="radio-btn"><input type="radio" name="cars-access" id="ca-yes" value="Yes"><label for="ca-yes">✓ Yes</label></div>
+          <div class="radio-btn"><input type="radio" name="cars-access" id="ca-no" value="No"><label for="ca-no">✗ No</label></div>
+          <div class="radio-btn"><input type="radio" name="cars-access" id="ca-partial" value="Partial"><label for="ca-partial">Partial</label></div>
+        </div>
+      </div>
+      <div id="cars-access-desc-wrap" style="display:none;">
+        <textarea id="cars-access-desc" rows="3" placeholder="Vehicle count, truck access, road surface..."></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="section-card">
+    <div class="section-header"><span class="sec-icon">🌍</span><h2>Land Type &amp; Surroundings</h2></div>
+    <div class="section-body">
+      <div class="field-group">
+        <label>Open or closed land?<span class="hint">Surrounding camps; important for security mitigations.</span></label>
+        <div class="radio-group" style="margin-bottom:8px;">
+          <div class="radio-btn"><input type="radio" name="land-type" id="lt-open" value="Open land"><label for="lt-open">Open land</label></div>
+          <div class="radio-btn"><input type="radio" name="land-type" id="lt-closed" value="Closed land"><label for="lt-closed">Closed land</label></div>
+        </div>
+        <textarea id="land-desc" rows="3" placeholder="Surrounding camps, neighbouring areas, context..."></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="section-card">
+    <div class="section-header"><span class="sec-icon">📡</span><h2>Communications &amp; Other NGOs</h2></div>
+    <div class="section-body">
+      <div class="field-group">
+        <label>Jawwal Signal Strength</label>
+        <div class="radio-group" style="margin-bottom:8px;">
+          <div class="radio-btn"><input type="radio" name="signal-jawwal" id="sig-jawwal-strong" value="Strong"><label for="sig-jawwal-strong">📶 Strong</label></div>
+          <div class="radio-btn"><input type="radio" name="signal-jawwal" id="sig-jawwal-moderate" value="Moderate"><label for="sig-jawwal-moderate">📶 Moderate</label></div>
+          <div class="radio-btn"><input type="radio" name="signal-jawwal" id="sig-jawwal-weak" value="Weak"><label for="sig-jawwal-weak">📶 Weak</label></div>
+          <div class="radio-btn"><input type="radio" name="signal-jawwal" id="sig-jawwal-none" value="No signal"><label for="sig-jawwal-none">❌ No signal</label></div>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Ooredoo Signal Strength</label>
+        <div class="radio-group" style="margin-bottom:8px;">
+          <div class="radio-btn"><input type="radio" name="signal-ooredoo" id="sig-ooredoo-strong" value="Strong"><label for="sig-ooredoo-strong">📶 Strong</label></div>
+          <div class="radio-btn"><input type="radio" name="signal-ooredoo" id="sig-ooredoo-moderate" value="Moderate"><label for="sig-ooredoo-moderate">📶 Moderate</label></div>
+          <div class="radio-btn"><input type="radio" name="signal-ooredoo" id="sig-ooredoo-weak" value="Weak"><label for="sig-ooredoo-weak">📶 Weak</label></div>
+          <div class="radio-btn"><input type="radio" name="signal-ooredoo" id="sig-ooredoo-none" value="No signal"><label for="sig-ooredoo-none">❌ No signal</label></div>
+        </div>
+      </div>
+      <div class="field-divider"></div>
+      <div class="field-group">
+        <label>Other NGOs at this site?</label>
+        <div class="radio-group" style="margin-bottom:8px;">
+          <div class="radio-btn"><input type="radio" name="ngos" id="ngo-yes" value="Yes"><label for="ngo-yes">✓ Yes</label></div>
+          <div class="radio-btn"><input type="radio" name="ngos" id="ngo-no" value="No"><label for="ngo-no">✗ No</label></div>
+        </div>
+      </div>
+      <div id="ngo-desc-wrap" style="display:none;">
+        <textarea id="ngo-desc" rows="3" placeholder="Organisation names, types of programming..."></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 3: Observations (Section 4) -->
+<div class="page" id="page-3">
+  <div class="step-page-title">Section 4 · Site Observations</div>
+  <div class="warn-box"><strong>⚠️ OBSERVATIONS ONLY — Do NOT ask interviewee directly</strong>These are sensitive questions answered by looking around and analysing surroundings.</div>
+  <div class="section-card">
+    <div class="section-header"><span class="sec-icon">🔍</span><h2>Site Observations</h2></div>
+    <div class="section-body">
+      <div class="field-group">
+        <label>Nearest Airstrike to Site</label>
+        <div class="radio-group" style="margin-bottom:8px;">
+          <div class="radio-btn"><input type="radio" name="airstrike" id="airstrike-yes" value="Yes"><label for="airstrike-yes">✓ Yes</label></div>
+          <div class="radio-btn"><input type="radio" name="airstrike" id="airstrike-no" value="No"><label for="airstrike-no">✗ No</label></div>
+        </div>
+      </div>
+      <div id="airstrike-followup" style="display:none;">
+        <div class="field-group"><label>Date of Airstrike</label><input type="date" id="airstrike-date"></div>
+        <div class="field-group"><label>Notes</label><textarea id="obs-airstrike" rows="3" placeholder="Proximity, direction, visible damage..."></textarea></div>
+      </div>
+      <div class="field-divider"></div>
+      <div class="field-group">
+        <label>Rubble / Signs of UXOs?</label>
+        <div class="radio-group" style="margin-bottom:8px;">
+          <div class="radio-btn"><input type="radio" name="uxo" id="uxo-yes" value="Yes — observed"><label for="uxo-yes">⚠️ Yes</label></div>
+          <div class="radio-btn"><input type="radio" name="uxo" id="uxo-no" value="None observed"><label for="uxo-no">✓ None</label></div>
+          <div class="radio-btn"><input type="radio" name="uxo" id="uxo-unclear" value="Unclear"><label for="uxo-unclear">? Unclear</label></div>
+        </div>
+      </div>
+      <div id="obs-uxo-wrap" style="display:none;">
+        <textarea id="obs-uxo" rows="2" placeholder="Location, suspicious objects, quantities..."></textarea>
+      </div>
+      <div class="field-divider"></div>
+      <div class="field-group"><label>Sensitive Infrastructure in Surroundings?<span class="hint">Mosque, government buildings, political affiliations — note for Area Manager follow-up.</span></label><textarea id="obs-sensitive" rows="4" placeholder="Describe sensitive infrastructure, political indicators..."></textarea></div>
+      <div class="field-divider"></div>
+      <div class="field-group">
+        <label>Safe Haven Identified?<span class="hint">Construction type, capacity, proximity. GPS pin placed on map (Step 5).</span></label>
+        <div class="radio-group" style="margin-bottom:8px;">
+          <div class="radio-btn"><input type="radio" name="safe-haven" id="sh-yes" value="Yes — identified"><label for="sh-yes">✓ Identified</label></div>
+          <div class="radio-btn"><input type="radio" name="safe-haven" id="sh-no" value="None identified"><label for="sh-no">✗ None</label></div>
+        </div>
+      </div>
+      <div id="obs-safehaven-wrap" style="display:none;">
+        <textarea id="obs-safehaven" rows="3" placeholder="Distance, construction type, capacity..."></textarea>
+      </div>
+      <div class="field-divider"></div>
+      <div class="field-group"><label>Behavioural Observations<span class="hint">Tensions, crowd control, weapons presence.</span></label><textarea id="obs-behavioral" rows="4" placeholder="Tensions, community control, unusual activities..."></textarea></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 4: Analysis (Section 8 content, step 5 in original) -->
+<div class="page" id="page-4">
+  <div class="step-page-title">Section 8 · Analysis &amp; Mitigation Measures</div>
+  <div class="section-card">
+    <div class="section-header"><span class="sec-icon">🔬</span><h2>Assessment Team's Analysis</h2></div>
+    <div class="section-body">
+      <div class="info-box"><strong>Analysis methodology:</strong>Take the raw data collected and examine what it means for site security and operational feasibility. This helps the decision maker make an informed selection decision.</div>
+      <div class="field-group">
+        <label>Analysis &amp; Findings <span class="required">*</span><span class="hint">Consider: logistics, parking vs distribution distance, community leader's control capacity, UXO context, behavioural observations, sensitive infrastructure.</span></label>
+        <textarea id="analysis" rows="8" placeholder="Describe your analysis of the security situation..."></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="section-card">
+    <div class="section-header"><span class="sec-icon">🛡️</span><h2>Recommendations &amp; Mitigation Measures</h2></div>
+    <div class="section-body">
+      <div class="field-group">
+        <label>Potential Mitigation Measures<span class="hint">E.g. alternative distribution points, additional staff, access control, pre-arrival check protocols.</span></label>
+        <textarea id="mitigations" rows="6" placeholder="— e.g. Alternative distribution point at [location]&#10;— e.g. Additional daily workers&#10;— e.g. Pre-arrival security check call 30 min before departure..."></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 5: Head of Base Decision (Section 9 — MANAGEMENT ONLY, empty) -->
+<div class="page" id="page-5">
+  <div class="step-page-title">Section 9 · Head of Base Decision</div>
+  <div class="section-card">
+    <div class="section-header"><span class="sec-icon">👤</span><h2>Head of Base Decision</h2></div>
+    <div class="section-body">
+      <div class="mgmt-box">
+        <div class="mgmt-icon">🔒</div>
+        <h3>Management Section</h3>
+        <p>This section is reserved for the <strong>Head of Base</strong> only.<br>It will be completed after the field assessment is submitted and reviewed.<br><br>The generated report includes a dedicated signature block and decision fields for management to fill in.</p>
+      </div>
+      <div class="field-divider"></div>
+      <div class="info-box" style="margin-bottom:0;"><strong>What happens next:</strong>Generate the report → email to Head of Base → HoB reviews, signs, and records the formal decision (Approved / Conditional / Rejected / Pending).</div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 6: GPS & Map (Section 5) -->
+<div class="page" id="page-6">
+  <div class="step-page-title">Section 5 · GPS Coordinates &amp; Site Map</div>
+  <div class="section-card">
+    <div class="section-header"><span class="sec-icon">🗺️</span><h2>GPS Corner Points &amp; Map</h2></div>
+    <div class="section-body">
+
+      <div class="map-instruction">
+        <span class="icon">📌</span>
+        <div>
+          <strong>Corner points:</strong> Select NW/NE/SE/SW then tap the map. For curved sites or extra points use <strong>Edit Mode</strong>. Place Safe Haven, Parking, or UXO pins via the coloured buttons.
+          <span id="capturing-badge" class="capturing-badge">● CAPTURING</span>
+        </div>
+      </div>
+
+      <div class="edit-banner" id="edit-banner">✏️ EDIT MODE — Tap map to add polygon point · Tap existing point to delete it</div>
+
+      <div class="map-layer-toggle">
+        <button class="layer-btn active" onclick="switchLayer('street')" id="layer-street">🗺 Street</button>
+        <button class="layer-btn" onclick="switchLayer('satellite')" id="layer-satellite">🛰 Satellite</button>
+        <button class="layer-btn" onclick="switchLayer('terrain')" id="layer-terrain">⛰ Terrain</button>
+      </div>
+
+      <div class="offline-map-panel">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray-500);margin-bottom:6px;">🔍 Go to Coordinates</div>
+        <div class="row-2">
+          <input type="text" id="goto-lat" placeholder="Latitude">
+          <input type="text" id="goto-lng" placeholder="Longitude">
+        </div>
+        <button class="map-btn secondary" onclick="goToCoordinates()" style="width:100%;margin-top:8px;">🔍 Search &amp; Go</button>
+      </div>
+
+      <div class="offline-map-panel">
+        <div class="offline-map-status" id="offline-map-status">Checking offline map status…</div>
+
+        <!-- Download as ZIP -->
+        <div class="offline-map-row" style="margin-bottom:8px;">
+          <button class="map-btn secondary" onclick="downloadOfflineMapZip()" id="btn-download-offline-map">📥 Download Map as ZIP</button>
+          <button class="map-btn secondary" onclick="cancelOfflineMapDownload()" id="btn-cancel-offline-download" style="display:none;flex:0 0 auto;">✕ Cancel</button>
+        </div>
+        <div class="offline-map-progress-wrap" id="offline-map-progress-wrap">
+          <div class="offline-map-progress-bar"><div class="offline-map-progress-fill" id="offline-map-progress-fill"></div></div>
+          <div class="offline-map-progress-text" id="offline-map-progress-text">0 / 0 tiles</div>
+        </div>
+
+        <!-- Import from ZIP -->
+        <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px;">
+          <div style="font-size:11px;color:var(--gray-500);margin-bottom:6px;">📂 Already have the ZIP? Import it here:</div>
+          <input type="file" id="tile-zip-input" accept=".zip" style="display:none" onchange="importOfflineMapZip(this)">
+          <button class="map-btn secondary" onclick="document.getElementById('tile-zip-input').click()" style="width:100%;">📂 Import Map ZIP</button>
+          <div id="import-progress-text" style="font-size:11px;color:var(--gray-500);margin-top:6px;display:none;"></div>
+        </div>
+      </div>
+      </div>
+
+      <!-- Corner + utility controls -->
+      <div class="map-controls">
+        <button class="map-btn secondary" onclick="locateMe()" id="locate-btn">📍 Me</button>
+        <button class="map-btn secondary" onclick="captureCorner('NW')" id="btn-NW">↖ NW</button>
+        <button class="map-btn secondary" onclick="captureCorner('NE')" id="btn-NE">↗ NE</button>
+        <button class="map-btn secondary" onclick="captureCorner('SE')" id="btn-SE">↘ SE</button>
+        <button class="map-btn secondary" onclick="captureCorner('SW')" id="btn-SW">↙ SW</button>
+        <button class="map-btn secondary" onclick="toggleEditMode()" id="btn-edit">✏️ Edit</button>
+        <button class="map-btn secondary" onclick="clearAllPolygon()" id="btn-clear-poly">🗑 Clear</button>
+      </div>
+
+      <!-- Drop-pin controls -->
+      <div class="map-controls">
+        <button class="map-btn pin-sh" onclick="captureDropPin('sh')" id="btn-pin-sh">🟢 Safe Haven</button>
+        <button class="map-btn pin-park" onclick="captureDropPin('parking')" id="btn-pin-parking">🟣 Parking</button>
+        <button class="map-btn pin-uxo" onclick="captureDropPin('uxo')" id="btn-pin-uxo">🟠 UXO</button>
+      </div>
+
+      <div class="map-wrap">
+        <div id="leaflet-map"></div>
+        <button class="map-fullscreen-btn" onclick="openFullscreen()" title="Full screen">⛶</button>
+      </div>
+
+      <div class="gps-points-grid">
+        <div class="gps-point" id="gps-display-NW"><label>↖ NW Corner</label><div class="coords empty" id="coords-NW">Not captured</div><button class="gps-clear-btn" onclick="clearCorner('NW')">✕</button></div>
+        <div class="gps-point" id="gps-display-NE"><label>↗ NE Corner</label><div class="coords empty" id="coords-NE">Not captured</div><button class="gps-clear-btn" onclick="clearCorner('NE')">✕</button></div>
+        <div class="gps-point" id="gps-display-SE"><label>↘ SE Corner</label><div class="coords empty" id="coords-SE">Not captured</div><button class="gps-clear-btn" onclick="clearCorner('SE')">✕</button></div>
+        <div class="gps-point" id="gps-display-SW"><label>↙ SW Corner</label><div class="coords empty" id="coords-SW">Not captured</div><button class="gps-clear-btn" onclick="clearCorner('SW')">✕</button></div>
+      </div>
+
+      <div id="site-stats-bar" style="display:none;background:#F0FFF4;border:1.5px solid #A9DFBF;border-radius:var(--radius);padding:10px 14px;margin-top:10px;font-size:12px;color:#1E8449;">
+        <div style="display:flex;gap:20px;flex-wrap:wrap;">
+          <span>📐 <strong>Perimeter:</strong> <span id="stat-perimeter">—</span></span>
+          <span>⬛ <strong>Area:</strong> <span id="stat-area">—</span></span>
+          <span>📍 <strong>Points:</strong> <span id="stat-points">0</span></span>
+        </div>
+      </div>
+
+      <!-- Extra drop pins list -->
+      <div id="pin-list-wrap" style="display:none;margin-top:10px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray-500);margin-bottom:6px;">Placed Markers</div>
+        <div class="pin-list" id="pin-list"></div>
+      </div>
+
+      <div style="margin-top:12px;background:#EBF5FB;border:1.5px solid #AED6F1;border-radius:var(--radius);padding:14px;">
+        <div style="font-size:12px;font-weight:700;color:#1A5276;margin-bottom:8px;">📱 Map Screenshots — Upload Manually</div>
+        <p style="font-size:11px;color:#2471A3;margin-bottom:10px;line-height:1.5;">Take a screenshot of the map using your phone's screenshot button, then upload it here. You can add up to <strong>6 screenshots</strong> (different views, zoom levels, etc.).</p>
+        <div class="photo-btn-row">
+          <button type="button" class="photo-btn" onclick="document.getElementById('map-shots-camera').click()">
+            <span class="pb-icon">📷</span>
+            <span class="pb-label">Camera</span>
+            <span class="pb-sub">Take a photo now</span>
+          </button>
+          <button type="button" class="photo-btn" onclick="document.getElementById('map-shots-input').click()">
+            <span class="pb-icon">🖼</span>
+            <span class="pb-label">Gallery</span>
+            <span class="pb-sub">Choose from device</span>
+          </button>
+        </div>
+        <input type="file" id="map-shots-camera" accept="image/*" capture="environment" style="display:none" onchange="handleMapShots(this)">
+        <input type="file" id="map-shots-input" accept="image/*" multiple style="display:none" onchange="handleMapShots(this)">
+        <div id="map-screenshots-gallery" style="display:none;margin-top:10px;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1A5276;margin-bottom:6px;">📷 Uploaded Map Views (<span id="screenshot-count">0</span>)</div>
+          <div class="map-screenshots-gallery" id="screenshots-grid"></div>
+        </div>
+      </div>
+
+      <div class="field-divider"></div>
+      <div class="field-group">
+        <label>Main Site GPS (centre / entrance)<span class="hint">Auto-derived from corners, or type manually.</span></label>
+        <div class="row-2">
+          <input type="text" id="main-lat" placeholder="Latitude">
+          <input type="text" id="main-lng" placeholder="Longitude">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 7: Photos (Section 6) -->
+<div class="page" id="page-7">
+  <div class="step-page-title">Section 6 · Required Photos</div>
+  <div class="section-card">
+    <div class="section-header"><span class="sec-icon">📸</span><h2>Required Photos</h2></div>
+    <div class="section-body">
+      <div class="info-box"><strong>5 photo categories · Up to 3 photos each:</strong><br>Tap the camera to capture or upload from gallery.</div>
+
+      <!-- 1. Site Overview -->
+      <div class="field-group">
+        <label>1 — Site Overview
+          <span class="hint">General view of the site from outside — show surroundings, scale, and context.</span>
+        </label>
+        <div class="photo-btn-row">
+          <button type="button" class="photo-btn" onclick="triggerCamera('overview')">
+            <span class="pb-icon">📷</span>
+            <span class="pb-label">Camera</span>
+            <span class="pb-sub">Take a photo now</span>
+          </button>
+          <button type="button" class="photo-btn" onclick="triggerGallery('overview')">
+            <span class="pb-icon">🖼</span>
+            <span class="pb-label">Gallery</span>
+            <span class="pb-sub">Choose from device</span>
+          </button>
+        </div>
+        <input type="file" id="photo-camera-overview" accept="image/*" capture="environment" style="display:none" onchange="handlePhotos('overview', this)">
+        <input type="file" id="photo-input-overview" accept="image/*" multiple style="display:none" onchange="handlePhotos('overview', this)">
+        <div class="photo-counter" id="counter-overview">0 / 3</div>
+        <div class="photo-preview-grid" id="preview-overview"></div>
+      </div>
+      <div class="field-divider"></div>
+
+      <!-- 2. Camp Entry / Exit -->
+      <div class="field-group">
+        <label>2 — Camp Entry / Exit &amp; Surroundings
+          <span class="hint">Entrance gates, exit points, roads, and immediate surroundings.</span>
+        </label>
+        <div class="photo-btn-row">
+          <button type="button" class="photo-btn" onclick="triggerCamera('entry')">
+            <span class="pb-icon">📷</span>
+            <span class="pb-label">Camera</span>
+            <span class="pb-sub">Take a photo now</span>
+          </button>
+          <button type="button" class="photo-btn" onclick="triggerGallery('entry')">
+            <span class="pb-icon">🖼</span>
+            <span class="pb-label">Gallery</span>
+            <span class="pb-sub">Choose from device</span>
+          </button>
+        </div>
+        <input type="file" id="photo-camera-entry" accept="image/*" capture="environment" style="display:none" onchange="handlePhotos('entry', this)">
+        <input type="file" id="photo-input-entry" accept="image/*" multiple style="display:none" onchange="handlePhotos('entry', this)">
+        <div class="photo-counter" id="counter-entry">0 / 3</div>
+        <div class="photo-preview-grid" id="preview-entry"></div>
+      </div>
+      <div class="field-divider"></div>
+
+      <!-- 3. Distribution Point -->
+      <div class="field-group">
+        <label>3 — Distribution Point (Entrance &amp; Inside)
+          <span class="hint">Both the entrance to the distribution area and the interior setup.</span>
+        </label>
+        <div class="photo-btn-row">
+          <button type="button" class="photo-btn" onclick="triggerCamera('distrib')">
+            <span class="pb-icon">📷</span>
+            <span class="pb-label">Camera</span>
+            <span class="pb-sub">Take a photo now</span>
+          </button>
+          <button type="button" class="photo-btn" onclick="triggerGallery('distrib')">
+            <span class="pb-icon">🖼</span>
+            <span class="pb-label">Gallery</span>
+            <span class="pb-sub">Choose from device</span>
+          </button>
+        </div>
+        <input type="file" id="photo-camera-distrib" accept="image/*" capture="environment" style="display:none" onchange="handlePhotos('distrib', this)">
+        <input type="file" id="photo-input-distrib" accept="image/*" multiple style="display:none" onchange="handlePhotos('distrib', this)">
+        <div class="photo-counter" id="counter-distrib">0 / 3</div>
+        <div class="photo-preview-grid" id="preview-distrib"></div>
+      </div>
+      <div class="field-divider"></div>
+
+      <!-- 4. Safe Haven -->
+      <div class="field-group">
+        <label>4 — Safe Haven <span style="font-weight:400;color:var(--gray-500);">(if any)</span>
+          <span class="hint">Shelter or protected area designated as safe haven — interior and exterior.</span>
+        </label>
+        <div class="photo-btn-row">
+          <button type="button" class="photo-btn" onclick="triggerCamera('safehaven')">
+            <span class="pb-icon">📷</span>
+            <span class="pb-label">Camera</span>
+            <span class="pb-sub">Take a photo now</span>
+          </button>
+          <button type="button" class="photo-btn" onclick="triggerGallery('safehaven')">
+            <span class="pb-icon">🖼</span>
+            <span class="pb-label">Gallery</span>
+            <span class="pb-sub">Choose from device</span>
+          </button>
+        </div>
+        <input type="file" id="photo-camera-safehaven" accept="image/*" capture="environment" style="display:none" onchange="handlePhotos('safehaven', this)">
+        <input type="file" id="photo-input-safehaven" accept="image/*" multiple style="display:none" onchange="handlePhotos('safehaven', this)">
+        <div class="photo-counter" id="counter-safehaven">0 / 3</div>
+        <div class="photo-preview-grid" id="preview-safehaven"></div>
+      </div>
+      <div class="field-divider"></div>
+
+      <!-- 5. Parking Area -->
+      <div class="field-group">
+        <label>5 — Parking Area
+          <span class="hint">Vehicle staging and parking — show capacity, surface condition, and access.</span>
+        </label>
+        <div class="photo-btn-row">
+          <button type="button" class="photo-btn" onclick="triggerCamera('parking')">
+            <span class="pb-icon">📷</span>
+            <span class="pb-label">Camera</span>
+            <span class="pb-sub">Take a photo now</span>
+          </button>
+          <button type="button" class="photo-btn" onclick="triggerGallery('parking')">
+            <span class="pb-icon">🖼</span>
+            <span class="pb-label">Gallery</span>
+            <span class="pb-sub">Choose from device</span>
+          </button>
+        </div>
+        <input type="file" id="photo-camera-parking" accept="image/*" capture="environment" style="display:none" onchange="handlePhotos('parking', this)">
+        <input type="file" id="photo-input-parking" accept="image/*" multiple style="display:none" onchange="handlePhotos('parking', this)">
+        <div class="photo-counter" id="counter-parking">0 / 3</div>
+        <div class="photo-preview-grid" id="preview-parking"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 8: Sketch (Section 7) -->
+<div class="page" id="page-8">
+  <div class="step-page-title">Section 7 · Site Map Sketch</div>
+  <div class="section-card">
+    <div class="section-header"><span class="sec-icon">🛰️</span><h2>Site Map Sketch</h2></div>
+    <div class="section-body">
+      <div class="info-box"><strong>How to use:</strong> Set up your polygon and markers on the map in Section 5, then use your phone's <strong>screenshot button</strong> to capture it. Upload the screenshots here — up to <strong>6 screenshots</strong> allowed.<br><br>You can capture different zoom levels or angles to show the full site.</div>
+
+      <div class="field-group" style="margin-top:14px;">
+        <label>Upload Map Screenshots
+          <span class="hint">Take screenshots of the map with the polygon visible, then upload them here.</span>
+        </label>
+        <div class="photo-upload-area" style="border-color:#AED6F1;background:#D6EAF8;" onclick="document.getElementById('sketch-upload-input').click()">
+          <div class="upload-icon">🗺️</div>
+          <div class="upload-label" style="color:#1A5276;">Tap to upload map screenshots</div>
+          <div class="upload-sub">PNG / JPG · Multiple files · Max 6 total</div>
+        </div>
+        <input type="file" id="sketch-upload-input" accept="image/*" multiple style="display:none" onchange="handleMapShots(this)">
+        <div class="photo-counter" id="sketch-shot-counter" style="color:#1A5276;">0 / 6 uploaded</div>
+
+        <div id="map-screenshots-gallery-s7" style="display:none;margin-top:10px;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1A5276;margin-bottom:6px;">Uploaded Screenshots</div>
+          <div id="screenshots-grid-s7"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end .main -->
+
+<div class="nav-buttons">
+  <button class="btn btn-secondary" id="btn-back" onclick="navigate(-1)">← Back</button>
+  <button class="btn btn-primary" id="btn-next" onclick="navigate(1)">Next →</button>
+  <button class="btn btn-generate" id="btn-generate" onclick="generateReport()" style="display:none;">📄 Generate Report</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- FULLSCREEN MAP OVERLAY -->
+<div id="map-fullscreen-overlay">
+  <div class="map-fs-bar">
+    <button class="map-btn secondary" onclick="locateMeFS()" id="locate-btn-fs" style="color:white;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3);">📍 Me</button>
+    <button class="map-btn" onclick="captureCornerFS('NW')" id="fs-btn-NW" style="background:#E74C3C;color:white;">↖ NW</button>
+    <button class="map-btn" onclick="captureCornerFS('NE')" id="fs-btn-NE" style="background:#2980B9;color:white;">↗ NE</button>
+    <button class="map-btn" onclick="captureCornerFS('SE')" id="fs-btn-SE" style="background:#27AE60;color:white;">↘ SE</button>
+    <button class="map-btn" onclick="captureCornerFS('SW')" id="fs-btn-SW" style="background:#F39C12;color:white;">↙ SW</button>
+    <button class="map-btn pin-sh" onclick="captureDropPinFS('sh')">🟢 SH</button>
+    <button class="map-btn pin-park" onclick="captureDropPinFS('parking')">🟣 Park</button>
+    <button class="map-btn pin-uxo" onclick="captureDropPinFS('uxo')">🟠 UXO</button>
+    <button class="map-btn secondary" onclick="toggleEditModeFS()" id="fs-btn-edit" style="color:white;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3);">✏️ Edit</button>
+    <button class="map-btn secondary" onclick="toggleGotoBoxFS()" style="color:white;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3);">🔍 Go to</button>
+  </div>
+  <div id="goto-box-fs" style="display:none;position:absolute;top:54px;left:50%;transform:translateX(-50%);z-index:700;background:rgba(0,0,0,0.85);border-radius:var(--radius);padding:10px;gap:8px;align-items:center;">
+    <input type="text" id="goto-coords-fs" placeholder="Latitude, Longitude" style="width:180px;background:rgba(255,255,255,0.9);">
+    <button class="map-btn secondary" onclick="goToCoordinatesFS()">Go</button>
+  </div>
+  <div id="map-fs-inner">
+    <div id="leaflet-map-fs"></div>
+    <button class="map-fs-close" onclick="closeFullscreen()">✕ Close</button>
+    <div id="edit-banner-fs" class="edit-banner" style="position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:600;white-space:nowrap;">✏️ EDIT MODE — Tap to add · Tap point to delete</div>
+  </div>
+</div>
+
+<!-- REPORT PAGE -->
+<div id="report-page">
+  <div class="report-toolbar">
+    <h2>📄 Security Site Assessment Report</h2>
+    <input type="file" id="templateInput" accept=".docx" style="display:none" onchange="generateWordReport()">
+    <button class="report-tool-btn word" onclick="document.getElementById('templateInput').click()">📝 Word Report</button>
+    <button class="report-tool-btn print" onclick="window.print()">🖨 Print / PDF</button>
+    <button class="report-tool-btn close" onclick="closeReport()">✕ Close</button>
+  </div>
+  <div style="padding:0 12px 60px;">
+    <div class="report-doc" id="report-content"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+var currentPage = 0;
+var totalPages  = 9;
+var mapInitialized = false;
+var fsMapInitialized = false;
+
+// Main map objects
+var map = null, mapFS = null;
+var layers = {}, layersFS = {};
+var currentLayer = 'street';
+var polygon = null, polygonFS = null;
+
+// Corner points (4 named)
+var gpsPoints = { NW:null, NE:null, SE:null, SW:null };
+var cornerMarkers = {}, cornerMarkersFS = {};
+
+// Extra polygon points for curved sites
+var extraPolyPoints = [];   // array of {lat,lng}
+var extraPolyMarkersMain = [];
+var extraPolyMarkersFS   = [];
+
+// Drop pins
+var dropPins = [];  // [{type:'sh'|'parking'|'uxo', lat, lng, markerMain, markerFS}]
+
+// Capture state
+var capturingCorner  = null;  // 'NW','NE','SE','SW' or null
+var capturingDropPin = null;  // 'sh','parking','uxo' or null
+var editMode = false;
+
+// Photos & sketch
+var photos = { overview:[], entry:[], distrib:[], safehaven:[], parking:[] };
+var capturedSketchDataURL = null;
+var capturedSketchStats   = null;
+var mapScreenshots = []; // [{dataURL, label}]
+var teamMemberCount = 0;
+
+// ============================================================
+// TEAM MEMBERS (dynamic list)
+// ============================================================
+function addTeamMember(prefillValue) {
+  teamMemberCount++;
+  var idx = teamMemberCount;
+  var wrap = document.createElement('div');
+  wrap.className = 'field-group';
+  wrap.id = 'team-row-' + idx;
+  wrap.style.position = 'relative';
+  var requiredMark = idx <= 2 ? ' <span class="required">*</span>' : '';
+  var removeBtn = idx > 2 ? '<button type="button" class="gps-clear-btn" onclick="removeTeamMember(' + idx + ')" style="position:absolute;top:0;right:0;font-size:13px;">✕ remove</button>' : '';
+  wrap.innerHTML = '<label>Team Member ' + idx + ' — Name &amp; Position' + requiredMark + '</label>'
+    + '<input type="text" id="team' + idx + '" list="team-name-history" placeholder="e.g. Ahmed Al-Rashid, Security Officer">'
+    + removeBtn;
+  document.getElementById('team-member-list').appendChild(wrap);
+  if (prefillValue) document.getElementById('team' + idx).value = prefillValue;
+}
+function removeTeamMember(idx) {
+  var row = document.getElementById('team-row-' + idx);
+  if (row) row.remove();
+}
+function renderDefaultTeamMembers() {
+  document.getElementById('team-member-list').innerHTML = '';
+  teamMemberCount = 0;
+  addTeamMember('Ahmed Abu Jami, Security Assistant');
+  addTeamMember();
+  addTeamMember();
+}
+
+// ============================================================
+// PREDICTIVE SUGGESTIONS (lightweight, per-field typed history)
+// ============================================================
+function loadPredictiveHistory(key) {
+  try { return JSON.parse(localStorage.getItem('acfHistory_' + key) || '[]'); } catch (e) { return []; }
+}
+function savePredictiveValue(key, value) {
+  value = (value || '').trim();
+  if (!value) return;
+  var list = loadPredictiveHistory(key).filter(function (v) { return v !== value; });
+  list.unshift(value);
+  if (list.length > 20) list = list.slice(0, 20);
+  try { localStorage.setItem('acfHistory_' + key, JSON.stringify(list)); } catch (e) {}
+  populateDatalist(key);
+}
+function populateDatalist(key) {
+  var dl = document.getElementById(key);
+  if (!dl) return;
+  dl.innerHTML = loadPredictiveHistory(key).map(function (v) {
+    return '<option value="' + v.replace(/"/g, '&quot;') + '"></option>';
+  }).join('');
+}
+function initPredictiveSuggestions() {
+  ['site-name-history', 'leader-name-history', 'deputy-name-history', 'team-name-history'].forEach(populateDatalist);
+  document.getElementById('site-name').addEventListener('change', function () { savePredictiveValue('site-name-history', this.value); });
+  document.getElementById('leader-name').addEventListener('change', function () { savePredictiveValue('leader-name-history', this.value); });
+  document.getElementById('deputy-name').addEventListener('change', function () { savePredictiveValue('deputy-name-history', this.value); });
+  document.getElementById('team-member-list').addEventListener('change', function (e) {
+    if (e.target && e.target.tagName === 'INPUT') savePredictiveValue('team-name-history', e.target.value);
+  });
+}
+
+// ============================================================
+// AUTOSAVE / RESTORE DRAFT (IndexedDB — survives closing the app,
+// so a half-filled assessment can be finished a day or more later)
+// ============================================================
+var AUTOSAVE_DB_NAME = 'acfAssessmentDraftDB';
+var AUTOSAVE_STORE = 'draft';
+var autosaveDBPromise = null;
+var autosaveTimer = null;
+
+function openAutosaveDB() {
+  if (autosaveDBPromise) return autosaveDBPromise;
+  autosaveDBPromise = new Promise(function (resolve, reject) {
+    if (!('indexedDB' in window)) { reject(new Error('IndexedDB not supported')); return; }
+    var req = indexedDB.open(AUTOSAVE_DB_NAME, 1);
+    req.onupgradeneeded = function () { req.result.createObjectStore(AUTOSAVE_STORE); };
+    req.onsuccess = function () { resolve(req.result); };
+    req.onerror = function () { reject(req.error); };
+  });
+  return autosaveDBPromise;
+}
+function collectFullAppState() {
+  var fields = {};
+  document.querySelectorAll('input[id], textarea[id], select[id]').forEach(function (el) {
+    if (el.type === 'file' || el.type === 'radio') return;
+    fields[el.id] = el.value;
+  });
+  var radios = {};
+  document.querySelectorAll('input[type="radio"][name]').forEach(function (el) {
+    if (el.checked) radios[el.name] = el.value;
+  });
+  return {
+    fields: fields, radios: radios,
+    photos: photos, mapScreenshots: mapScreenshots, capturedSketchDataURL: capturedSketchDataURL,
+    gpsPoints: gpsPoints, extraPolyPoints: extraPolyPoints,
+    dropPins: dropPins.map(function (p) { return { type: p.type, lat: p.lat, lng: p.lng }; }),
+    savedAt: new Date().toISOString()
+  };
+}
+function autosaveDraft() {
+  openAutosaveDB().then(function (db) {
+    var tx = db.transaction(AUTOSAVE_STORE, 'readwrite');
+    tx.objectStore(AUTOSAVE_STORE).put(collectFullAppState(), 'current');
+  }).catch(function (e) { console.warn('Autosave failed:', e); });
+}
+function scheduleAutosave() {
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(autosaveDraft, 1000);
+}
+function restoreDraft() {
+  return openAutosaveDB().then(function (db) {
+    return new Promise(function (resolve, reject) {
+      var tx = db.transaction(AUTOSAVE_STORE, 'readonly');
+      var req = tx.objectStore(AUTOSAVE_STORE).get('current');
+      req.onsuccess = function () { resolve(req.result || null); };
+      req.onerror = function () { reject(req.error); };
+    });
+  });
+}
+function clearDraft() {
+  openAutosaveDB().then(function (db) {
+    db.transaction(AUTOSAVE_STORE, 'readwrite').objectStore(AUTOSAVE_STORE).delete('current');
+  }).then(function () { showToast('Saved draft cleared.'); }).catch(function () {});
+}
+function confirmClearDraft() {
+  if (!confirm('Clear the saved draft and start a fresh assessment? This cannot be undone.')) return;
+  clearDraft();
+  setTimeout(function () { location.reload(); }, 600);
+}
+function applyDraftState(state) {
+  if (!state) return;
+  var teamKeys = Object.keys(state.fields || {}).filter(function (k) { return /^team\d+$/.test(k); });
+  var maxIdx = teamKeys.reduce(function (m, k) { return Math.max(m, parseInt(k.replace('team', ''), 10)); }, 0);
+  document.getElementById('team-member-list').innerHTML = '';
+  teamMemberCount = 0;
+  for (var i = 0; i < Math.max(maxIdx, 3); i++) addTeamMember();
+
+  Object.keys(state.fields || {}).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.value = state.fields[id];
+  });
+  Object.keys(state.radios || {}).forEach(function (name) {
+    var el = document.querySelector('input[name="' + name + '"][value="' + String(state.radios[name] || '').replace(/"/g, '\\"') + '"]');
+    if (el) el.checked = true;
+  });
+
+  if (state.photos) { photos = state.photos; ['overview', 'entry', 'distrib', 'safehaven', 'parking'].forEach(renderPhotoPreviews); }
+  if (state.mapScreenshots) { mapScreenshots = state.mapScreenshots; renderScreenshotsGallery(); }
+  if (state.capturedSketchDataURL) { capturedSketchDataURL = state.capturedSketchDataURL; }
+  if (state.gpsPoints) {
+    gpsPoints = state.gpsPoints;
+    Object.keys(gpsPoints).forEach(function (c) { if (gpsPoints[c]) updateGPSDisplay(c, gpsPoints[c].lat, gpsPoints[c].lng); });
+  }
+  if (state.extraPolyPoints) extraPolyPoints = state.extraPolyPoints;
+  if (state.dropPins) dropPins = state.dropPins.map(function (p) { return { type: p.type, lat: p.lat, lng: p.lng, markerMain: null, markerFS: null }; });
+  renderPinList();
+  if (map)   { restoreMarkersOnMap(map, 'main'); redrawBoth(); }
+  if (mapFS) { restoreMarkersOnMap(mapFS, 'fs'); }
+  updateStats();
+  refreshAllConditionalSections();
+}
+function initAutosave() {
+  document.addEventListener('input', function (e) {
+    if (e.target && e.target.id === 'templateInput') return;
+    scheduleAutosave();
+  });
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.id === 'templateInput') return;
+    scheduleAutosave();
+  });
+}
+
+// ============================================================
+// CONDITIONAL FOLLOW-UP SECTIONS — shown only for the relevant
+// Yes/No (or similar) answer, instead of always-visible fields
+// ============================================================
+var CONDITIONAL_BINDINGS = [
+  { radioName: 'committee',      showWhen: ['Yes'],                          containerId: 'committee-followup' },
+  { radioName: 'leader-resides', showWhen: ['No'],                           containerId: 'leader-location-wrap' },
+  { radioName: 'camp-type',      showWhen: ['Part of a group'],              containerId: 'camp-type-followup' },
+  { radioName: 'cars-access',    showWhen: ['Yes', 'Partial'],               containerId: 'cars-access-desc-wrap' },
+  { radioName: 'ngos',           showWhen: ['Yes'],                          containerId: 'ngo-desc-wrap' },
+  { radioName: 'uxo',            showWhen: ['Yes — observed', 'Unclear'],    containerId: 'obs-uxo-wrap' },
+  { radioName: 'safe-haven',     showWhen: ['Yes — identified'],             containerId: 'obs-safehaven-wrap' },
+  { radioName: 'airstrike',      showWhen: ['Yes'],                          containerId: 'airstrike-followup' }
+];
+function refreshConditional(binding) {
+  var checked = document.querySelector('input[name="' + binding.radioName + '"]:checked');
+  var container = document.getElementById(binding.containerId);
+  if (!container) return;
+  container.style.display = (checked && binding.showWhen.indexOf(checked.value) !== -1) ? '' : 'none';
+}
+function refreshAllConditionalSections() {
+  CONDITIONAL_BINDINGS.forEach(refreshConditional);
+}
+function initConditionalSections() {
+  CONDITIONAL_BINDINGS.forEach(function (binding) {
+    document.querySelectorAll('input[name="' + binding.radioName + '"]').forEach(function (el) {
+      el.addEventListener('change', function () { refreshConditional(binding); });
+    });
+  });
+  refreshAllConditionalSections();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('load', function() {
+  // 1. Run everything that's synchronous FIRST so the page is usable immediately
+  var today = new Date().toISOString().split('T')[0];
+  document.getElementById('assess-date').value = today;
+  renderDefaultTeamMembers();
+  initPredictiveSuggestions();
+  initConditionalSections();
+  updateNavButtons(); // ← always run this NOW, not after async operations
+
+  // 2. Autosave listener (non-blocking)
+  initAutosave();
+
+  // 3. Try to restore a saved draft — but even if this fails or hangs, the page
+  //    is already usable because updateNavButtons() ran above synchronously.
+  var draftRestoreTimeout = setTimeout(function () {
+    // Fallback: if IndexedDB never responds within 3s, silently continue
+    console.warn('[ACF] IndexedDB did not respond — continuing without draft restore');
+  }, 3000);
+
+  restoreDraft().then(function (state) {
+    clearTimeout(draftRestoreTimeout);
+    if (state && state.savedAt) {
+      applyDraftState(state);
+      var d = new Date(state.savedAt);
+      showToast('Restored draft from ' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+    }
+    updateNavButtons();
+  }).catch(function (err) {
+    clearTimeout(draftRestoreTimeout);
+    console.warn('[ACF] Draft restore failed:', err);
+  });
+});
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function navigate(dir) {
+  var n = currentPage + dir;
+  if (n < 0 || n >= totalPages) return;
+  goToPage(n);
+}
+
+function goToPage(n) {
+  document.getElementById('page-' + currentPage).classList.remove('active');
+  document.querySelector('[data-page="' + currentPage + '"]').classList.remove('active');
+  currentPage = n;
+  document.getElementById('page-' + currentPage).classList.add('active');
+  document.querySelectorAll('.prog-step').forEach(function(s, i) {
+    s.classList.toggle('active', i === currentPage);
+    s.classList.toggle('done', i < currentPage);
+  });
+  updateNavButtons();
+  window.scrollTo(0, 0);
+  if (currentPage === 6) setTimeout(initMap, 150);
+}
+
+function updateNavButtons() {
+  var back = document.getElementById('btn-back');
+  var next = document.getElementById('btn-next');
+  var gen  = document.getElementById('btn-generate');
+  back.style.display = (currentPage === 0) ? 'none' : '';
+  if (currentPage === totalPages - 1) {
+    next.style.display = 'none'; gen.style.display = '';
+  } else {
+    next.style.display = ''; gen.style.display = 'none';
+  }
+}
+
+// ============================================================
+// MAP INIT
+// ============================================================
+function buildLayers(m) {
+  return {
+    street:    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}),
+    satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'© Esri',maxZoom:19}),
+    terrain:   L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{attribution:'© OpenTopoMap',maxZoom:17})
+  };
+}
+
+function initMap() {
+  if (mapInitialized) { if (map) map.invalidateSize(); return; }
+  mapInitialized = true;
+  map = L.map('leaflet-map', { center:[33.5,36.3], zoom:13, zoomControl:true });
+  layers = buildLayers(map);
+  layers.street.addTo(map);
+  map.on('click', onMainMapClick);
+  restoreMarkersOnMap(map, 'main');
+}
+
+function initMapFS() {
+  if (fsMapInitialized) { if (mapFS) mapFS.invalidateSize(); return; }
+  fsMapInitialized = true;
+  mapFS = L.map('leaflet-map-fs', { center: map ? map.getCenter() : [33.5,36.3], zoom: map ? map.getZoom() : 13, zoomControl:true });
+  layersFS = buildLayers(mapFS);
+  layersFS[currentLayer].addTo(mapFS);
+  mapFS.on('click', onFSMapClick);
+  restoreMarkersOnMap(mapFS, 'fs');
+}
+
+function restoreMarkersOnMap(m, side) {
+  // corners
+  Object.keys(gpsPoints).forEach(function(c) {
+    if (gpsPoints[c]) addCornerMarker(m, side, c, gpsPoints[c].lat, gpsPoints[c].lng);
+  });
+  // extra poly points
+  extraPolyPoints.forEach(function(p, i) {
+    addExtraPolyMarker(m, side, i, p.lat, p.lng);
+  });
+  // drop pins
+  dropPins.forEach(function(p, i) {
+    addDropPinMarker(m, side, i, p.type, p.lat, p.lng);
+  });
+  redrawPolygon(m, side);
+}
+
+// ============================================================
+// LAYER SWITCHING
+// ============================================================
+function switchLayer(type) {
+  if (!map) return;
+  map.removeLayer(layers[currentLayer]);
+  layers[type].addTo(map);
+  if (mapFS && layersFS[currentLayer]) { mapFS.removeLayer(layersFS[currentLayer]); layersFS[type].addTo(mapFS); }
+  currentLayer = type;
+  document.querySelectorAll('.layer-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('layer-' + type).classList.add('active');
+}
+
+// ============================================================
+// OFFLINE SATELLITE MAP (Gaza Strip) — Service Worker + Cache Storage
+// Pre-downloads Esri World Imagery tiles for the whole Gaza Strip
+// (zoom 0-17, building-level detail) so the satellite layer keeps
+// working with zero internet connection out in the field. Tiles are
+// written to the SAME cache the service worker reads from offline.
+// ============================================================
+var GAZA_BBOX = { north: 31.5961, south: 31.2201, west: 34.2156, east: 34.5739 };
+var TILE_MIN_ZOOM = 0, TILE_MAX_ZOOM = 17;
+var TILE_CACHE_NAME = 'acf-gaza-satellite-tiles-v1';
+var _gazaTileListCache = null;
+var offlineDownloadInProgress = false;
+var offlineDownloadCancelled = false;
+
+function lonLatToTileXY(lat, lon, zoom) {
+  var latRad = lat * Math.PI / 180;
+  var n = Math.pow(2, zoom);
+  var x = Math.floor((lon + 180) / 360 * n);
+  var y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
+  return { x: x, y: y };
+}
+
+function buildGazaTileList() {
+  if (_gazaTileListCache) return _gazaTileListCache;
+  var urls = [];
+  for (var z = TILE_MIN_ZOOM; z <= TILE_MAX_ZOOM; z++) {
+    var nw = lonLatToTileXY(GAZA_BBOX.north, GAZA_BBOX.west, z);
+    var se = lonLatToTileXY(GAZA_BBOX.south, GAZA_BBOX.east, z);
+    var xMin = Math.min(nw.x, se.x), xMax = Math.max(nw.x, se.x);
+    var yMin = Math.min(nw.y, se.y), yMax = Math.max(nw.y, se.y);
+    for (var x = xMin; x <= xMax; x++) {
+      for (var y = yMin; y <= yMax; y++) {
+        urls.push('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/' + z + '/' + y + '/' + x);
+      }
+    }
+  }
+  _gazaTileListCache = urls;
+  return urls;
+}
+
+function registerOfflineServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  if (location.protocol === 'file:') { console.log('[ACF SW] Skipped on file://'); return; }
+  // Use explicit scope so it works whether hosted at root or in a subdirectory (e.g. GitHub Pages /repo-name/)
+  var swScope = location.pathname.replace(/\/[^\/]*$/, '/');
+  navigator.serviceWorker.register('sw.js', { scope: swScope }).then(function (reg) {
+    console.log('[ACF SW] Registered, scope:', reg.scope);
+    // Immediately activate new SW if waiting (avoids stale version on first load after update)
+    if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    reg.addEventListener('updatefound', function () {
+      var newWorker = reg.installing;
+      if (newWorker) {
+        newWorker.addEventListener('statechange', function () {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            console.log('[ACF SW] Update found — reload to apply.');
+          }
+        });
+      }
+    });
+  }).catch(function (err) {
+    console.error('[ACF SW] Registration failed:', err);
+  });
+}
+
+function updateOfflineMapStatusUI() {
+  var statusEl = document.getElementById('offline-map-status');
+  if (!statusEl) return;
+  if (location.protocol === 'file:') {
+    statusEl.textContent = '⚠ Offline map requires this page to be hosted over https:// (not a local file).';
+    statusEl.className = 'offline-map-status partial';
+    return;
+  }
+  var raw = localStorage.getItem('acfOfflineMapInfo');
+  if (!raw) {
+    statusEl.textContent = 'Satellite map not downloaded yet — needs internet + ~700MB, one time.';
+    statusEl.className = 'offline-map-status';
+    return;
+  }
+  try {
+    var info = JSON.parse(raw);
+    var d = new Date(info.downloadedAt);
+    var dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    var pct = info.total ? Math.round((info.success / info.total) * 100) : 0;
+    var sizeStr = (info.bytesDownloaded ? (info.bytesDownloaded / (1024 * 1024)).toFixed(0) : '?') + 'MB';
+    if (pct >= 99) {
+      statusEl.textContent = '✅ Offline satellite map ready — ' + sizeStr + ' (downloaded ' + dateStr + ')';
+      statusEl.className = 'offline-map-status ready';
+    } else {
+      statusEl.textContent = '⚠ Partially downloaded (' + pct + '%, ' + sizeStr + ') on ' + dateStr + ' — tap Download to finish.';
+      statusEl.className = 'offline-map-status partial';
+    }
+  } catch (e) {
+    statusEl.textContent = 'Satellite map not downloaded yet — needs internet + ~700MB, one time.';
+    statusEl.className = 'offline-map-status';
+  }
+}
+
+async function downloadOfflineMapZip() {
+  if (location.protocol === 'file:') { showToast('Needs https:// hosting.'); return; }
+  if (typeof PizZip === 'undefined') { showToast('PizZip library not loaded.'); return; }
+  if (offlineDownloadInProgress) return;
+  offlineDownloadInProgress = true;
+  offlineDownloadCancelled = false;
+
+  var statusBtn  = document.getElementById('btn-download-offline-map');
+  var progWrap   = document.getElementById('offline-map-progress-wrap');
+  var progFill   = document.getElementById('offline-map-progress-fill');
+  var progText   = document.getElementById('offline-map-progress-text');
+  var cancelBtn  = document.getElementById('btn-cancel-offline-download');
+
+  statusBtn.disabled = true;
+  statusBtn.textContent = '⏳ Building ZIP…';
+  progWrap.style.display = '';
+  cancelBtn.style.display = '';
+
+  try {
+    var tiles = buildGazaTileList();
+    var total = tiles.length;
+    var done = 0, ok = 0, fail = 0;
+    var bytesDownloaded = 0;
+    var AVG_TILE_BYTES = 25600;
+    var nextIndex = 0;
+    var CONCURRENCY = 6;
+    var zip = new PizZip();
+
+    function updateProgress() {
+      var pct = total ? Math.round((done / total) * 100) : 0;
+      progFill.style.width = pct + '%';
+      progText.textContent = done.toLocaleString() + ' / ' + total.toLocaleString() + ' tiles (' + pct + '%) · ' + (bytesDownloaded / (1024*1024)).toFixed(1) + ' MB';
+    }
+    updateProgress();
+
+    async function worker() {
+      while (nextIndex < total) {
+        if (offlineDownloadCancelled) return;
+        var i = nextIndex++;
+        var url = tiles[i];
+        // tile path inside zip: z/y/x.jpg  (mirrors the URL structure)
+        var parts = url.split('/tile/')[1]; // "z/y/x"
+        var zipPath = 'tiles/' + parts + '.jpg';
+        try {
+          var resp = await fetch(url, { mode: 'cors', credentials: 'omit' });
+          if (resp && resp.ok) {
+            var buf = await resp.arrayBuffer();
+            zip.file(zipPath, buf);
+            bytesDownloaded += buf.byteLength;
+            ok++;
+          } else { fail++; }
+        } catch (e) { fail++; }
+        done++;
+        if (done % 20 === 0 || done === total) updateProgress();
+      }
+    }
+
+    var workers = [];
+    for (var w = 0; w < CONCURRENCY; w++) workers.push(worker());
+    await Promise.all(workers);
+
+    if (offlineDownloadCancelled) {
+      showToast('Cancelled — partial ZIP not saved.');
+    } else {
+      progText.textContent = 'Generating ZIP file… (may take a minute)';
+      var blob = zip.generate({ type: 'blob', compression: 'STORE', mimeType: 'application/zip' });
+      saveAs(blob, 'acf-gaza-satellite-tiles.zip');
+
+      var info = { downloadedAt: new Date().toISOString(), total: total, success: ok, failed: fail, bytesDownloaded: bytesDownloaded, maxZoom: TILE_MAX_ZOOM, source: 'zip' };
+      localStorage.setItem('acfOfflineMapInfo', JSON.stringify(info));
+      updateOfflineMapStatusUI();
+      showToast('ZIP saved! Share it with other devices and use "Import Map ZIP".');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('ZIP download failed: ' + (err && err.message ? err.message : 'unknown error'));
+  } finally {
+    offlineDownloadInProgress = false;
+    statusBtn.disabled = false;
+    statusBtn.textContent = '📥 Download Map as ZIP';
+    progWrap.style.display = 'none';
+    cancelBtn.style.display = 'none';
+  }
+}
+
+async function importOfflineMapZip(input) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  if (typeof PizZip === 'undefined') { showToast('PizZip not loaded.'); return; }
+  if (!('caches' in window)) { showToast('Cache Storage not supported in this browser.'); return; }
+
+  var progressEl = document.getElementById('import-progress-text');
+  progressEl.style.display = '';
+  progressEl.textContent = '📂 Reading ZIP…';
+
+  try {
+    var buf = await file.arrayBuffer();
+    var zip = new PizZip(buf);
+    var files = Object.keys(zip.files).filter(function(f){ return !zip.files[f].dir; });
+    var total = files.length;
+    progressEl.textContent = 'Found ' + total.toLocaleString() + ' tiles — importing…';
+
+    var cache = await caches.open(TILE_CACHE_NAME);
+    var done = 0, ok = 0;
+    var TILE_HOST_BASE = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/';
+
+    for (var i = 0; i < files.length; i++) {
+      var zipPath = files[i]; // e.g. "tiles/13/5123/4001.jpg"
+      var parts = zipPath.replace('tiles/', '').replace('.jpg', ''); // "13/5123/4001"  → z/y/x
+      var tileUrl = TILE_HOST_BASE + parts;
+      try {
+        var fileData = zip.files[zipPath].asUint8Array();
+        var response = new Response(fileData, {
+          status: 200,
+          headers: { 'Content-Type': 'image/jpeg', 'Content-Length': String(fileData.byteLength) }
+        });
+        await cache.put(tileUrl, response);
+        ok++;
+      } catch (e) {}
+      done++;
+      if (done % 500 === 0 || done === total) {
+        progressEl.textContent = 'Importing… ' + done.toLocaleString() + ' / ' + total.toLocaleString() + ' tiles (' + Math.round(done/total*100) + '%)';
+      }
+    }
+
+    var info = { downloadedAt: new Date().toISOString(), total: total, success: ok, failed: total - ok, bytesDownloaded: buf.byteLength, maxZoom: TILE_MAX_ZOOM, source: 'import' };
+    localStorage.setItem('acfOfflineMapInfo', JSON.stringify(info));
+    updateOfflineMapStatusUI();
+    progressEl.textContent = '✅ Import complete — ' + ok.toLocaleString() + ' tiles ready offline!';
+    showToast('Map imported! Satellite layer now works offline.');
+  } catch (err) {
+    console.error(err);
+    progressEl.textContent = '❌ Import failed: ' + (err && err.message ? err.message : 'unknown');
+    showToast('Import failed — is this a valid tile ZIP?');
+  }
+  input.value = '';
+}
+
+function cancelOfflineMapDownload() {
+  offlineDownloadCancelled = true;
+}
+
+registerOfflineServiceWorker();
+updateOfflineMapStatusUI();
+
+// ============================================================
+// LOCATE
+// ============================================================
+function locateMe() { doLocate(map, 'locate-btn'); }
+function locateMeFS() { doLocate(mapFS || map, 'locate-btn-fs'); }
+
+// ============================================================
+// GO TO COORDINATES (search a specific lat/lng and jump there)
+// ============================================================
+var searchMarkerMain = null, searchMarkerFS = null;
+function placeSearchMarker(m, lat, lng) {
+  var icon = L.divIcon({
+    html: '<div style="display:flex;flex-direction:column;align-items:center;">'
+        + '<div style="background:#8E44AD;color:white;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.5);border:2px solid white;">🔍 Searched location</div>'
+        + '<div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #8E44AD;margin-top:-1px;"></div>'
+        + '</div>',
+    className: '', iconAnchor: [10, 8]
+  });
+  var isMain = (m === map);
+  if (isMain && searchMarkerMain) m.removeLayer(searchMarkerMain);
+  if (!isMain && searchMarkerFS) m.removeLayer(searchMarkerFS);
+  var mk = L.marker([lat, lng], { icon: icon }).addTo(m);
+  if (isMain) searchMarkerMain = mk; else searchMarkerFS = mk;
+}
+function parseLatLng(latStr, lngStr) {
+  var lat = parseFloat(latStr), lng = parseFloat(lngStr);
+  if (isNaN(lat) || isNaN(lng)) return null;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+  return { lat: lat, lng: lng };
+}
+function goToCoordinates() {
+  var p = parseLatLng(getVal('goto-lat'), getVal('goto-lng'));
+  if (!p) { showToast('Enter a valid latitude and longitude.'); return; }
+  if (!map) initMap();
+  map.setView([p.lat, p.lng], 17);
+  placeSearchMarker(map, p.lat, p.lng);
+  showToast('Moved to ' + p.lat.toFixed(6) + ', ' + p.lng.toFixed(6));
+}
+function goToCoordinatesFS() {
+  var raw = getVal('goto-coords-fs');
+  var parts = raw.split(',');
+  var p = parts.length === 2 ? parseLatLng(parts[0].trim(), parts[1].trim()) : null;
+  if (!p) { showToast('Enter coordinates as: latitude, longitude'); return; }
+  if (!mapFS) initMapFS();
+  mapFS.setView([p.lat, p.lng], 17);
+  placeSearchMarker(mapFS, p.lat, p.lng);
+  showToast('Moved to ' + p.lat.toFixed(6) + ', ' + p.lng.toFixed(6));
+}
+function toggleGotoBoxFS() {
+  var box = document.getElementById('goto-box-fs');
+  box.style.display = (box.style.display === 'none' || !box.style.display) ? 'flex' : 'none';
+}
+function doLocate(m, btnId) {
+  var btn = document.getElementById(btnId); if(!btn) return;
+  btn.textContent = '⏳';
+  navigator.geolocation.getCurrentPosition(
+    function(p){
+      var lat = p.coords.latitude, lng = p.coords.longitude;
+      m.setView([lat, lng], 17);
+      placeMyLocationMarker(m, lat, lng);
+      if (!getVal('main-lat') && !getVal('main-lng')) {
+        document.getElementById('main-lat').value = lat.toFixed(6);
+        document.getElementById('main-lng').value = lng.toFixed(6);
+      }
+      btn.textContent = '📍 Me';
+      showToast('Location found: ' + lat.toFixed(6) + ', ' + lng.toFixed(6));
+      scheduleAutosave();
+    },
+    function(){ btn.textContent = '📍 Me'; showToast('Location denied.'); }
+  );
+}
+
+var myLocationMarkerMain = null, myLocationMarkerFS = null;
+function placeMyLocationMarker(m, lat, lng) {
+  var icon = L.divIcon({
+    html: '<div style="display:flex;flex-direction:column;align-items:center;">'
+        + '<div style="background:#1A5276;color:white;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.5);border:2px solid white;">📍 My Location</div>'
+        + '<div style="width:10px;height:10px;background:#1A5276;border-radius:50%;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4);margin-top:2px;"></div>'
+        + '</div>',
+    className: '', iconAnchor: [10, 10]
+  });
+  var isMain = (m === map);
+  if (isMain && myLocationMarkerMain) m.removeLayer(myLocationMarkerMain);
+  if (!isMain && myLocationMarkerFS) m.removeLayer(myLocationMarkerFS);
+  var mk = L.marker([lat, lng], { icon: icon }).addTo(m);
+  if (isMain) myLocationMarkerMain = mk; else myLocationMarkerFS = mk;
+}
+
+function captureCampGPS() {
+  showToast('Getting current location…');
+  navigator.geolocation.getCurrentPosition(
+    function (p) {
+      var lat = p.coords.latitude, lng = p.coords.longitude;
+      document.getElementById('camp-gps').value = lat.toFixed(6) + ', ' + lng.toFixed(6);
+      showToast('Camp GPS captured!');
+      scheduleAutosave();
+    },
+    function () { showToast('Location access denied.'); }
+  );
+}
+
+// ============================================================
+// FULLSCREEN MAP
+// ============================================================
+function openFullscreen() {
+  document.getElementById('map-fullscreen-overlay').classList.add('active');
+  setTimeout(function(){
+    initMapFS();
+    if (mapFS) { mapFS.invalidateSize(); if (map) { mapFS.setView(map.getCenter(), map.getZoom()); } }
+  }, 100);
+}
+function closeFullscreen() {
+  document.getElementById('map-fullscreen-overlay').classList.remove('active');
+  // Sync back to main map
+  if (map && mapFS) { map.setView(mapFS.getCenter(), mapFS.getZoom()); }
+  setEditMode(false);
+}
+
+// ============================================================
+// CORNER CAPTURE
+// ============================================================
+function captureCorner(c) {
+  if (!map) initMap();
+  cancelAllCapture();
+  if (capturingCorner === c) return;
+  capturingCorner = c;
+  document.getElementById('capturing-badge').classList.add('visible');
+  document.getElementById('btn-' + c).classList.add('active');
+  showToast('Tap map for ' + c + ' corner');
+}
+function captureCornerFS(c) {
+  cancelAllCapture();
+  if (capturingCorner === c) return;
+  capturingCorner = c;
+  document.getElementById('edit-banner-fs').style.display = 'none';
+  showToast('Tap map for ' + c + ' corner');
+}
+
+// ============================================================
+// DROP PINS
+// ============================================================
+function captureDropPin(type) {
+  if (!map) initMap();
+  cancelAllCapture();
+  capturingDropPin = type;
+  document.getElementById('capturing-badge').classList.add('visible');
+  document.getElementById('btn-pin-' + type).classList.add('active');
+  showToast('Tap map to place ' + pinLabel(type) + ' marker');
+}
+function captureDropPinFS(type) {
+  cancelAllCapture();
+  capturingDropPin = type;
+  showToast('Tap map to place ' + pinLabel(type) + ' marker');
+}
+function pinLabel(t){ return t==='sh'?'Safe Haven':t==='parking'?'Parking':'UXO'; }
+function pinColor(t){ return t==='sh'?'#27AE60':t==='parking'?'#8E44AD':'#E67E22'; }
+function pinEmoji(t){ return t==='sh'?'🟢':t==='parking'?'🟣':'🟠'; }
+
+// ============================================================
+// EDIT MODE (extra polygon points)
+// ============================================================
+function toggleEditMode() { setEditMode(!editMode); }
+function toggleEditModeFS() { setEditMode(!editMode); }
+function setEditMode(on) {
+  editMode = on;
+  var banner = document.getElementById('edit-banner');
+  var bannerFS = document.getElementById('edit-banner-fs');
+  var btn = document.getElementById('btn-edit');
+  var btnFS = document.getElementById('fs-btn-edit');
+  if (banner) banner.classList.toggle('on', on);
+  if (bannerFS) bannerFS.style.display = on ? '' : 'none';
+  if (btn) btn.classList.toggle('active', on);
+  if (btnFS) btnFS.classList.toggle('active', on);
+  if (on) { cancelAllCapture(true); showToast('Edit mode ON — tap to add polygon points'); }
+}
+
+// ============================================================
+// MAP CLICK HANDLERS
+// ============================================================
+function onMainMapClick(e) { handleMapClick(e.latlng.lat, e.latlng.lng, map, 'main'); }
+function onFSMapClick(e)   { handleMapClick(e.latlng.lat, e.latlng.lng, mapFS, 'fs'); }
+
+function handleMapClick(lat, lng, m, side) {
+  if (capturingCorner) {
+    placeCorner(lat, lng);
+  } else if (capturingDropPin) {
+    placeDropPin(lat, lng);
+  } else if (editMode) {
+    addExtraPoint(lat, lng);
+  }
+}
+
+// ============================================================
+// PLACE CORNER
+// ============================================================
+function placeCorner(lat, lng) {
+  var c = capturingCorner;
+  gpsPoints[c] = {lat:lat, lng:lng};
+  // update on both maps
+  if (map)   addCornerMarker(map,   'main', c, lat, lng);
+  if (mapFS) addCornerMarker(mapFS, 'fs',   c, lat, lng);
+  updateGPSDisplay(c, lat, lng);
+  cancelAllCapture();
+  redrawBoth();
+  updateStats();
+  updateCenterCoords();
+  showToast(c + ' corner captured!');
+}
+
+var cornerColors = { NW:'#E74C3C', NE:'#2980B9', SE:'#27AE60', SW:'#F39C12' };
+var cornerIcons  = { NW:'↖', NE:'↗', SE:'↘', SW:'↙' };
+
+function addCornerMarker(m, side, c, lat, lng) {
+  var store = side==='main' ? cornerMarkers : cornerMarkersFS;
+  if (store[c]) m.removeLayer(store[c]);
+  var icon = L.divIcon({
+    html:'<div style="background:'+cornerColors[c]+';color:white;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,0.4)">'+cornerIcons[c]+' '+c+'</div>',
+    className:'', iconAnchor:[24,10]
+  });
+  store[c] = L.marker([lat,lng],{icon:icon,draggable:true}).addTo(m);
+  store[c].on('dragend', function(ev){ gpsPoints[c]={lat:ev.target.getLatLng().lat,lng:ev.target.getLatLng().lng}; updateGPSDisplay(c,gpsPoints[c].lat,gpsPoints[c].lng); redrawBoth(); updateStats(); updateCenterCoords(); });
+}
+
+function clearCorner(c) {
+  if (cornerMarkers[c])   { map && map.removeLayer(cornerMarkers[c]);   delete cornerMarkers[c]; }
+  if (cornerMarkersFS[c]) { mapFS && mapFS.removeLayer(cornerMarkersFS[c]); delete cornerMarkersFS[c]; }
+  gpsPoints[c] = null;
+  document.getElementById('gps-display-'+c).classList.remove('set');
+  var el = document.getElementById('coords-'+c); el.classList.add('empty'); el.textContent='Not captured';
+  redrawBoth(); updateStats();
+}
+
+function clearAllPolygon() {
+  // clear extra poly points
+  extraPolyMarkersMain.forEach(function(m2){ map&&map.removeLayer(m2); });
+  extraPolyMarkersFS.forEach(function(m2){ mapFS&&mapFS.removeLayer(m2); });
+  extraPolyPoints=[]; extraPolyMarkersMain=[]; extraPolyMarkersFS=[];
+  // clear corners
+  ['NW','NE','SE','SW'].forEach(clearCorner);
+  redrawBoth(); updateStats();
+  showToast('All polygon points cleared');
+}
+
+// ============================================================
+// EXTRA POLYGON POINTS
+// ============================================================
+function addExtraPoint(lat, lng) {
+  var idx = extraPolyPoints.length;
+  var pointName = 'P' + (idx + 1);
+  extraPolyPoints.push({lat:lat, lng:lng, name:pointName});
+  if (map)   addExtraPolyMarker(map,   'main', idx, lat, lng);
+  if (mapFS) addExtraPolyMarker(mapFS, 'fs',   idx, lat, lng);
+  redrawBoth(); updateStats();
+  showToast('Point ' + pointName + ' added');
+}
+
+function addExtraPolyMarker(m, side, idx, lat, lng) {
+  var icon = L.divIcon({
+    html:'<div style="background:#1A5276;color:white;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,0.4)">P'+(idx+1)+'</div>',
+    className:'', iconAnchor:[12,10]
+  });
+  var mk = L.marker([lat,lng],{icon:icon,draggable:true}).addTo(m);
+  mk.on('dragend', function(ev){
+    extraPolyPoints[idx]={lat:ev.target.getLatLng().lat,lng:ev.target.getLatLng().lng};
+    redrawBoth(); updateStats();
+  });
+  mk.on('click', function(ev){
+    L.DomEvent.stopPropagation(ev);
+    // remove this extra point
+    m.removeLayer(mk);
+    extraPolyPoints.splice(idx,1);
+    // rebuild lists
+    extraPolyMarkersMain.forEach(function(x){ map&&map.removeLayer(x); });
+    extraPolyMarkersFS.forEach(function(x){ mapFS&&mapFS.removeLayer(x); });
+    extraPolyMarkersMain=[]; extraPolyMarkersFS=[];
+    extraPolyPoints.forEach(function(p,i){
+      if(map)   addExtraPolyMarker(map,   'main', i, p.lat, p.lng);
+      if(mapFS) addExtraPolyMarker(mapFS, 'fs',   i, p.lat, p.lng);
+    });
+    redrawBoth(); updateStats();
+    showToast('Point removed');
+  });
+  if (side==='main') extraPolyMarkersMain[idx]=mk;
+  else               extraPolyMarkersFS[idx]=mk;
+}
+
+// ============================================================
+// DROP PINS (SH / Parking / UXO)
+// ============================================================
+function placeDropPin(lat, lng) {
+  var type = capturingDropPin;
+  var idx = dropPins.length;
+  var entry = {type:type, lat:lat, lng:lng, markerMain:null, markerFS:null};
+  dropPins.push(entry);
+  if (map)   entry.markerMain = addDropPinMarker(map,   'main', idx, type, lat, lng);
+  if (mapFS) entry.markerFS   = addDropPinMarker(mapFS, 'fs',   idx, type, lat, lng);
+  cancelAllCapture();
+  renderPinList();
+  showToast(pinLabel(type) + ' pin placed');
+}
+
+function addDropPinMarker(m, side, idx, type, lat, lng) {
+  var pinIcons = {
+    sh:      { bg:'#27AE60', emoji:'🟢', full:'Safe Haven',  symbol:'⛺' },
+    parking: { bg:'#8E44AD', emoji:'🟣', full:'Parking',     symbol:'🅿' },
+    uxo:     { bg:'#E67E22', emoji:'🟠', full:'UXO / Rubble',symbol:'⚠' }
+  };
+  var pi = pinIcons[type];
+  var icon = L.divIcon({
+    html: '<div style="display:flex;flex-direction:column;align-items:center;gap:0;">'
+        + '  <div style="background:'+pi.bg+';color:white;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.5);border:2px solid white;">'
+        +    pi.symbol + ' ' + pi.full
+        + '  </div>'
+        + '  <div style="width:2px;height:8px;background:'+pi.bg+';margin:0 auto;"></div>'
+        + '  <div style="width:10px;height:10px;background:'+pi.bg+';border-radius:50%;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>'
+        + '</div>',
+    className: '',
+    iconAnchor: [50, 28]
+  });
+  var mk = L.marker([lat,lng],{icon:icon,draggable:true}).addTo(m);
+  mk.on('dragend',function(ev){ dropPins[idx].lat=ev.target.getLatLng().lat; dropPins[idx].lng=ev.target.getLatLng().lng; renderPinList(); });
+  return mk;
+}
+
+function removeDropPin(idx) {
+  var p = dropPins[idx];
+  if (p.markerMain && map)   map.removeLayer(p.markerMain);
+  if (p.markerFS   && mapFS) mapFS.removeLayer(p.markerFS);
+  dropPins.splice(idx,1);
+  renderPinList();
+}
+
+function renderPinList() {
+  var wrap = document.getElementById('pin-list-wrap');
+  var list = document.getElementById('pin-list');
+  if (!dropPins.length) { wrap.style.display='none'; list.innerHTML=''; return; }
+  wrap.style.display='';
+  list.innerHTML = dropPins.map(function(p,i){
+    return '<div class="pin-item"><span style="color:'+pinColor(p.type)+';font-size:16px;">'+pinEmoji(p.type)+'</span><span class="pin-label">'+pinLabel(p.type)+'</span><span class="pin-coords">'+p.lat.toFixed(5)+', '+p.lng.toFixed(5)+'</span><button class="pin-del" onclick="removeDropPin('+i+')">✕</button></div>';
+  }).join('');
+}
+
+// ============================================================
+// CANCEL ALL CAPTURE
+// ============================================================
+function cancelAllCapture(keepEdit) {
+  capturingCorner  = null;
+  capturingDropPin = null;
+  var badge = document.getElementById('capturing-badge');
+  if (badge) badge.classList.remove('visible');
+  document.querySelectorAll('.map-btn').forEach(function(b){ b.classList.remove('active'); });
+  if (!keepEdit) setEditMode(false);
+}
+
+// ============================================================
+// REDRAW POLYGON
+// ============================================================
+
+// Sort an array of {lat,lng} points into clockwise geographic order
+// using centroid-angle approach. This guarantees no self-intersecting
+// polygon regardless of the order the user tapped NW/NE/SE/SW.
+function sortPointsClockwise(pts) {
+  if (pts.length < 3) return pts;
+  var cx = 0, cy = 0;
+  pts.forEach(function(p){ cx += p.lng; cy += p.lat; });
+  cx /= pts.length; cy /= pts.length;
+  return pts.slice().sort(function(a, b) {
+    // atan2 gives angle in radians; negate lat diff because screen-Y is flipped
+    var angA = Math.atan2(a.lat - cy, a.lng - cx);
+    var angB = Math.atan2(b.lat - cy, b.lng - cx);
+    return angB - angA; // descending = clockwise on map
+  });
+}
+
+function getAllPolyPoints() {
+  var named = ['NW','NE','SE','SW'].map(function(c){ return gpsPoints[c]; }).filter(Boolean);
+  var all   = named.concat(extraPolyPoints);
+  // Sort geographically so lines never cross, regardless of tap order or label names
+  return all.length >= 3 ? sortPointsClockwise(all) : all;
+}
+
+function redrawBoth() {
+  if (map)   redrawPolygon(map,   'main');
+  if (mapFS) redrawPolygon(mapFS, 'fs');
+}
+
+function redrawPolygon(m, side) {
+  // Remove existing polygon from this map
+  if (side === 'main' && polygon)   { m.removeLayer(polygon);   polygon   = null; }
+  if (side === 'fs'   && polygonFS) { m.removeLayer(polygonFS); polygonFS = null; }
+
+  var pts = getAllPolyPoints();
+  if (pts.length < 2) return;
+
+  var lls = pts.map(function(p){ return [p.lat, p.lng]; });
+  var poly = L.polygon(lls, {
+    color:'#2471A3', weight:3, fillColor:'#2471A3', fillOpacity:0.09,
+    dashArray: pts.length < 3 ? '6,4' : null
+  }).addTo(m);
+
+  if (side === 'main') polygon   = poly;
+  else                 polygonFS = poly;
+
+  // Only auto-fit when the full 4-corner polygon is first completed
+  // (not on every drag update, which causes jarring map jumps)
+  if (pts.length === 4 && side === 'main') {
+    m.fitBounds(poly.getBounds(), { padding:[70,70], maxZoom:18, animate:false });
+  }
+}
+
+// ============================================================
+// STATS
+// ============================================================
+function updateStats() {
+  var pts = getAllPolyPoints();
+  document.getElementById('stat-points').textContent = pts.length;
+  if (pts.length >= 3) {
+    var perim = computePerimeter(pts);
+    var area  = computeArea(pts);
+    var pStr = perim>=1000 ? (perim/1000).toFixed(2)+' km' : Math.round(perim)+' m';
+    var aStr = area>=10000 ? (area/10000).toFixed(2)+' ha'  : Math.round(area)+' m²';
+    document.getElementById('stat-perimeter').textContent = pStr;
+    document.getElementById('stat-area').textContent = aStr;
+    document.getElementById('site-stats-bar').style.display='';
+  } else if (pts.length) {
+    document.getElementById('site-stats-bar').style.display='';
+    document.getElementById('stat-perimeter').textContent='—';
+    document.getElementById('stat-area').textContent='—';
+  } else {
+    document.getElementById('site-stats-bar').style.display='none';
+  }
+}
+
+function haverDist(a,b) {
+  var R=6371000, dLat=(b.lat-a.lat)*Math.PI/180, dLng=(b.lng-a.lng)*Math.PI/180;
+  var s=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s));
+}
+function computePerimeter(pts) {
+  var t=0; for(var i=0;i<pts.length;i++) t+=haverDist(pts[i],pts[(i+1)%pts.length]); return t;
+}
+function computeArea(pts) {
+  var R=6371000,toRad=Math.PI/180,n=pts.length,area=0;
+  for(var i=0;i<n;i++){
+    var j=(i+1)%n;
+    var xi=pts[i].lng*toRad*R*Math.cos(pts[i].lat*toRad), yi=pts[i].lat*toRad*R;
+    var xj=pts[j].lng*toRad*R*Math.cos(pts[j].lat*toRad), yj=pts[j].lat*toRad*R;
+    area+=xi*yj-xj*yi;
+  }
+  return Math.abs(area)/2;
+}
+
+function updateCenterCoords() {
+  var pts = getAllPolyPoints();
+  if (!pts.length) return;
+  var lat = pts.reduce(function(s,p){return s+p.lat;},0)/pts.length;
+  var lng = pts.reduce(function(s,p){return s+p.lng;},0)/pts.length;
+  var latEl = document.getElementById('main-lat');
+  var lngEl = document.getElementById('main-lng');
+  if (!latEl.value) latEl.value = lat.toFixed(6);
+  if (!lngEl.value) lngEl.value = lng.toFixed(6);
+}
+
+function updateGPSDisplay(c, lat, lng) {
+  document.getElementById('gps-display-'+c).classList.add('set');
+  var el = document.getElementById('coords-'+c); el.classList.remove('empty');
+  el.textContent = lat.toFixed(6)+', '+lng.toFixed(6);
+}
+
+// ============================================================
+// SHARED CANVAS DRAWING HELPERS
+// ============================================================
+
+// Draw corner & extra-point labels directly on the canvas.
+// Uses Leaflet's own latLngToContainerPoint — coordinate-exact because
+// we do NOT call fitBounds/setView before this; the map is already settled.
+function llToCanvas(mapObj, mapEl, W, H, lat, lng) {
+  var pt  = mapObj.latLngToContainerPoint(L.latLng(lat, lng));
+  var elW = mapEl.offsetWidth  || mapEl.clientWidth  || 1;
+  var elH = mapEl.offsetHeight || mapEl.clientHeight || 1;
+  return { x: (pt.x / elW) * W, y: (pt.y / elH) * H };
+}
+
+// Overlay compact corner + extra-point labels on an already-captured canvas.
+// We do NOT redraw the polygon or pins — html2canvas already copied them from
+// the Leaflet DOM with pixel-perfect accuracy.
+function drawLabelsOnCanvas(ctx, mapObj, mapEl, W, H) {
+  var cornerNames  = { NW:'↖ NW', NE:'↗ NE', SE:'↘ SE', SW:'↙ SW' };
+  var namedCorners = ['NW','NE','SE','SW'];
+
+  namedCorners.forEach(function(cn) {
+    if (!gpsPoints[cn]) return;
+    var cp   = llToCanvas(mapObj, mapEl, W, H, gpsPoints[cn].lat, gpsPoints[cn].lng);
+    var fSz  = Math.max(10, W * 0.015);
+    var text = cornerNames[cn];
+    ctx.font = 'bold ' + fSz + 'px Arial';
+    var tw   = ctx.measureText(text).width;
+    // Badge background
+    ctx.fillStyle = cornerColors[cn];
+    ctx.beginPath();
+    ctx.roundRect
+      ? ctx.roundRect(cp.x - tw/2 - 5, cp.y - fSz - 10, tw + 10, fSz + 7, 4)
+      : ctx.rect(cp.x - tw/2 - 5, cp.y - fSz - 10, tw + 10, fSz + 7);
+    ctx.fill();
+    // Text
+    ctx.fillStyle  = 'white';
+    ctx.textAlign  = 'center';
+    ctx.fillText(text, cp.x, cp.y - 5);
+    ctx.textAlign  = 'left';
+    // Dot at exact GPS point
+    ctx.beginPath(); ctx.arc(cp.x, cp.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle   = cornerColors[cn]; ctx.fill();
+    ctx.strokeStyle = 'white'; ctx.lineWidth = 1.5; ctx.stroke();
+  });
+
+  // Extra polygon points
+  extraPolyPoints.forEach(function(ep, i) {
+    var pp  = llToCanvas(mapObj, mapEl, W, H, ep.lat, ep.lng);
+    var nm  = ep.name || ('P' + (i + 1));
+    var fSz = Math.max(9, W * 0.012);
+    ctx.font = 'bold ' + fSz + 'px Arial';
+    var tw  = ctx.measureText(nm).width;
+    ctx.fillStyle = '#1A5276';
+    ctx.beginPath();
+    ctx.roundRect
+      ? ctx.roundRect(pp.x - tw/2 - 4, pp.y - fSz - 9, tw + 8, fSz + 6, 4)
+      : ctx.rect(pp.x - tw/2 - 4, pp.y - fSz - 9, tw + 8, fSz + 6);
+    ctx.fill();
+    ctx.fillStyle = 'white'; ctx.textAlign = 'center';
+    ctx.fillText(nm, pp.x, pp.y - 4);
+    ctx.textAlign = 'left';
+    ctx.beginPath(); ctx.arc(pp.x, pp.y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#1A5276'; ctx.fill();
+    ctx.strokeStyle = 'white'; ctx.lineWidth = 1.5; ctx.stroke();
+  });
+}
+
+function addHeaderFooterToCanvas(ctx, W, H, siteName, assessDate, perimTxt, areaTxt, numPts) {
+  ctx.fillStyle = 'rgba(0,0,0,0.72)';
+  ctx.fillRect(0, 0, W, 40);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold ' + Math.max(11, W * 0.021) + 'px Arial';
+  ctx.fillText('ACF Security Assessment — ' + siteName + '  |  ' + assessDate, 12, 27);
+  if (perimTxt && perimTxt !== '—') {
+    ctx.fillStyle = 'rgba(192,57,43,0.88)';
+    ctx.fillRect(0, H - 36, W, 36);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold ' + Math.max(10, W * 0.018) + 'px Arial';
+    ctx.fillText('  📐 Perimeter: ' + perimTxt + '     ⬛ Area: ' + areaTxt + '     📍 Points: ' + numPts, 8, H - 12);
+  }
+}
+
+// ============================================================
+// CAPTURE MAP SKETCH
+// ============================================================
+// ============================================================
+// PHOTOS
+// ============================================================
+function triggerPhotoInput(cat) {
+  // Default — opens gallery (no capture attribute)
+  var inp = document.getElementById('photo-input-' + cat);
+  if (inp) inp.click();
+}
+function triggerCamera(cat) {
+  var inp = document.getElementById('photo-camera-' + cat);
+  if (inp) inp.click();
+}
+function triggerGallery(cat) {
+  var inp = document.getElementById('photo-input-' + cat);
+  if (inp) inp.click();
+}
+
+function handlePhotos(category, input) {
+  var MAX = 3;
+  var files = Array.from(input.files);
+  var remaining = MAX - photos[category].length;
+  if (remaining <= 0) { showToast('Maximum 3 photos per category.'); input.value = ''; return; }
+  files.slice(0, remaining).forEach(function(f) {
+    var reader = new FileReader();
+    reader.onload = function(e) { photos[category].push({ dataURL: e.target.result }); renderPhotoPreviews(category); };
+    reader.readAsDataURL(f);
+  });
+  input.value = '';
+}
+
+function renderPhotoPreviews(category) {
+  var MAX = 3;
+  var grid = document.getElementById('preview-' + category);
+  var counter = document.getElementById('counter-' + category);
+  if (!grid) return;
+  var count = photos[category].length;
+  // Update counter
+  if (counter) { counter.textContent = count + ' / ' + MAX; counter.className = 'photo-counter' + (count >= MAX ? ' full' : ''); }
+  // Show/hide upload area
+  var uploadArea = document.querySelector('[onclick="triggerPhotoInput(\'' + category + '\')"]');
+  if (uploadArea) uploadArea.style.display = count >= MAX ? 'none' : '';
+  // Render thumbs
+  grid.innerHTML = '';
+  photos[category].forEach(function(photo, idx) {
+    var t = document.createElement('div'); t.className = 'photo-thumb';
+    t.innerHTML = '<img src="' + photo.dataURL + '"><button class="remove-photo" onclick="removePhoto(\'' + category + '\',' + idx + ')">✕</button>';
+    grid.appendChild(t);
+  });
+}
+
+function removePhoto(cat, idx) {
+  photos[cat].splice(idx, 1);
+  renderPhotoPreviews(cat);
+}
+
+// Map screenshots — manual upload by user
+function handleMapShots(input) {
+  var MAX = 6;
+  var files = Array.from(input.files);
+  var remaining = MAX - mapScreenshots.length;
+  if (remaining <= 0) { showToast('Maximum 6 map screenshots allowed.'); input.value = ''; return; }
+  files.slice(0, remaining).forEach(function(f) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      mapScreenshots.push({ dataURL: e.target.result, label: 'Map View #' + (mapScreenshots.length + 1) });
+      renderScreenshotsGallery();
+    };
+    reader.readAsDataURL(f);
+  });
+  input.value = '';
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg) {
+  var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); },2400);
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function getVal(id){ var el=document.getElementById(id); return el?el.value.trim():''; }
+function getRadio(name){ var el=document.querySelector('input[name="'+name+'"]:checked'); return el?el.value:''; }
+function fv(v,fb){ fb=fb||'<span style="color:#bbb;font-style:italic;">Not provided</span>'; return v||fb; }
+
+// ============================================================
+// WORD REPORT GENERATION (PizZip + docxtemplater + FileSaver)
+// Reads a local .docx template selected via #templateInput,
+// fills it with every form field on the page (keyed by element id,
+// e.g. {site-name}, {team1}), plus radio-group selections keyed by
+// their "name" attribute (e.g. {committee}, {cars-access}), and
+// triggers a download of the populated document.
+// ============================================================
+// ------------------------------------------------------------
+// Image tags — docxtemplater only fills text, so photo tags are
+// rendered as a unique sentinel string first, then the sentinel's
+// text run is swapped for a real embedded image directly in the
+// docx XML afterward.
+// ------------------------------------------------------------
+function gatherTemplateImageSources() {
+  var sources = {};
+  sources['photo-input-overview']  = (photos.overview  && photos.overview[0])  ? photos.overview[0].dataURL  : null;
+  sources['photo-input-entry']     = (photos.entry     && photos.entry[0])     ? photos.entry[0].dataURL     : null;
+  sources['photo-input-distrib']   = (photos.distrib   && photos.distrib[0])   ? photos.distrib[0].dataURL   : null;
+  sources['photo-input-safehaven'] = (photos.safehaven && photos.safehaven[0]) ? photos.safehaven[0].dataURL : null;
+  sources['photo-input-parking']   = (photos.parking   && photos.parking[0])   ? photos.parking[0].dataURL   : null;
+  // Map screenshots and sketch uploads share one underlying list in this app
+  // (both call handleMapShots) — first image -> map tag, second -> sketch tag.
+  sources['map-shots-input']     = mapScreenshots[0] ? mapScreenshots[0].dataURL : null;
+  sources['sketch-upload-input'] = mapScreenshots[1] ? mapScreenshots[1].dataURL : null;
+  return sources;
+}
+
+function imageSentinel(tag) { return '\u00A7IMG:' + tag + '\u00A7'; }
+
+function loadImageDimensions(dataURL) {
+  return new Promise(function (resolve) {
+    var img = new Image();
+    img.onload  = function () { resolve({ w: img.naturalWidth || 800, h: img.naturalHeight || 600 }); };
+    img.onerror = function () { resolve({ w: 800, h: 600 }); };
+    img.src = dataURL;
+  });
+}
+
+function dataURLToBytes(dataURL) {
+  var match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.*)$/.exec(dataURL || '');
+  if (!match) return null;
+  var binary = atob(match[2]);
+  var bytes = new Uint8Array(binary.length);
+  for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return { mime: match[1], bytes: bytes };
+}
+
+function extensionForMime(mime) {
+  var map = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp' };
+  return map[mime] || 'png';
+}
+
+// Replaces each image sentinel's text run with a real embedded picture,
+// directly patching document.xml / relationships / content types inside
+// the already-rendered docx zip. Tags the template doesn't actually use,
+// or photo slots with nothing uploaded, are skipped safely.
+async function embedImagesInZip(zip, imageSources) {
+  var tags = Object.keys(imageSources).filter(function (t) { return !!imageSources[t]; });
+  if (!tags.length) return;
+
+  var DISPLAY_WIDTH_EMU = 2743200; // 3 inches wide, height scales to match the photo's aspect ratio
+  var docXmlFile = zip.file('word/document.xml');
+  var relsFile   = zip.file('word/_rels/document.xml.rels');
+  var ctFile     = zip.file('[Content_Types].xml');
+  if (!docXmlFile || !relsFile || !ctFile) return; // unexpected docx structure — skip image embedding safely
+
+  var docXml  = docXmlFile.asText();
+  var relsXml = relsFile.asText();
+  var ctXml   = ctFile.asText();
+
+  var maxRid = 0;
+  (relsXml.match(/Id="rId(\d+)"/g) || []).forEach(function (m) {
+    var n = parseInt(m.replace(/Id="rId(\d+)"/, '$1'), 10);
+    if (n > maxRid) maxRid = n;
+  });
+
+  var extensionsAdded = {};
+  var newRelEntries = [];
+  var imgCounter = 0;
+
+  for (var t = 0; t < tags.length; t++) {
+    var tag = tags[t];
+    var sentinel = imageSentinel(tag);
+    if (docXml.indexOf(sentinel) === -1) continue; // this template doesn't contain that tag
+
+    var parsed = dataURLToBytes(imageSources[tag]);
+    if (!parsed) continue;
+    var dims = await loadImageDimensions(imageSources[tag]);
+    var ext = extensionForMime(parsed.mime);
+
+    imgCounter++;
+    var mediaName = 'image_acfgen_' + imgCounter + '.' + ext;
+    zip.file('word/media/' + mediaName, parsed.bytes, { binary: true });
+
+    maxRid++;
+    var rId = 'rId' + maxRid;
+    newRelEntries.push('<Relationship Id="' + rId + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/' + mediaName + '"/>');
+
+    if (!extensionsAdded[ext] && ctXml.indexOf('Extension="' + ext + '"') === -1) {
+      var mimeForCt = ext === 'jpg' ? 'image/jpeg' : ('image/' + ext);
+      ctXml = ctXml.replace('</Types>', '<Default Extension="' + ext + '" ContentType="' + mimeForCt + '"/></Types>');
+      extensionsAdded[ext] = true;
+    }
+
+    var cx = DISPLAY_WIDTH_EMU;
+    var cy = Math.round(DISPLAY_WIDTH_EMU * (dims.h / dims.w));
+    var docPrId = 90000 + imgCounter;
+
+    var drawingXml = '<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">'
+      + '<wp:extent cx="' + cx + '" cy="' + cy + '"/>'
+      + '<wp:docPr id="' + docPrId + '" name="Picture ' + docPrId + '"/>'
+      + '<wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr>'
+      + '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+      + '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">'
+      + '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">'
+      + '<pic:nvPicPr><pic:cNvPr id="' + docPrId + '" name="Picture ' + docPrId + '"/><pic:cNvPicPr/></pic:nvPicPr>'
+      + '<pic:blipFill><a:blip r:embed="' + rId + '" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>'
+      + '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>'
+      + '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>';
+
+    var escapedSentinel = sentinel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    var sentinelRegex = new RegExp('<w:r(?:\\s[^>]*)?>(?:(?!</w:r>)[\\s\\S])*?' + escapedSentinel + '(?:(?!</w:r>)[\\s\\S])*?</w:r>');
+    if (sentinelRegex.test(docXml)) {
+      docXml = docXml.replace(sentinelRegex, drawingXml);
+    }
+  }
+
+  if (newRelEntries.length) {
+    relsXml = relsXml.replace('</Relationships>', newRelEntries.join('') + '</Relationships>');
+    zip.file('word/_rels/document.xml.rels', relsXml);
+    zip.file('[Content_Types].xml', ctXml);
+    zip.file('word/document.xml', docXml);
+  }
+}
+
+function gatherTemplateData() {
+  var data = {};
+
+  // Plain inputs / textareas / selects — tag name = element id
+  var fieldSelector = [
+    'input[type="text"][id]', 'input[type="date"][id]', 'input[type="time"][id]',
+    'input[type="tel"][id]',  'input[type="number"][id]',
+    'textarea[id]', 'select[id]'
+  ].join(', ');
+  document.querySelectorAll(fieldSelector).forEach(function (el) {
+    data[el.id] = el.value || '';
+  });
+
+  // Radio button groups — two tag styles are supported at once:
+  //  1) {groupName} -> the selected option's label text (e.g. {committee} -> "Yes")
+  //  2) {optionId}  -> "X" if that specific option is selected, else blank
+  //     (e.g. {committee-yes} -> "X" only when the "Yes" radio is checked —
+  //     this matches templates built as a checkbox-style table)
+  var seenGroups = {};
+  document.querySelectorAll('input[type="radio"][name]').forEach(function (el) {
+    if (el.id) data[el.id] = el.checked ? 'X' : '';
+    if (seenGroups[el.name]) return;
+    seenGroups[el.name] = true;
+    data[el.name] = getRadio(el.name);
+  });
+
+  // Team members — dynamic list, exposed both as a combined block and as
+  // individual team1/team2/... tags (already covered above by id, since
+  // each row's input has an id) plus a convenience {team-members-all} tag.
+  var teamLines = [];
+  document.querySelectorAll('#team-member-list input[id]').forEach(function (el) {
+    if (el.value.trim()) teamLines.push(el.value.trim());
+  });
+  data['team-members-all'] = teamLines.join(', ');
+
+  // GPS corner points — {corner-nw}, {corner-ne}, {corner-se}, {corner-sw}
+  ['NW', 'NE', 'SE', 'SW'].forEach(function (c) {
+    var p = gpsPoints[c];
+    data['corner-' + c.toLowerCase()] = p ? (p.lat.toFixed(6) + ', ' + p.lng.toFixed(6)) : '';
+  });
+
+  // Drop pins (Safe Haven / Parking / UXO) — combined multi-line list
+  data['pins-list'] = dropPins.map(function (p) {
+    return pinLabel(p.type) + ': ' + p.lat.toFixed(6) + ', ' + p.lng.toFixed(6);
+  }).join('\n');
+
+  // Extra polygon points (Edit Mode) — combined multi-line list
+  data['extra-points-list'] = extraPolyPoints.map(function (p, i) {
+    return 'P' + (i + 1) + ': ' + p.lat.toFixed(6) + ', ' + p.lng.toFixed(6);
+  }).join('\n');
+
+  return data;
+}
+
+function generateWordReport() {
+  var input = document.getElementById('templateInput');
+  var file  = input.files && input.files[0];
+  if (!file) { showToast('Please choose a .docx template first.'); return; }
+
+  if (typeof PizZip === 'undefined' || typeof window.docxtemplater === 'undefined' || typeof saveAs === 'undefined') {
+    showToast('PizZip / docxtemplater / FileSaver not loaded — check the <script> paths in <head>.');
+    input.value = '';
+    return;
+  }
+
+  var reader = new FileReader();
+
+  reader.onload = async function (e) {
+    try {
+      var content = e.target.result; // ArrayBuffer — read locally, no fetch involved
+      var zip = new PizZip(content);
+      var doc = new window.docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+        nullGetter: function () { return ''; } // blank instead of throwing on tags with no matching field
+      });
+
+      var imageSources = gatherTemplateImageSources();
+      var data = gatherTemplateData();
+      Object.keys(imageSources).forEach(function (tag) {
+        data[tag] = imageSources[tag] ? imageSentinel(tag) : '';
+      });
+
+      doc.render(data);
+      await embedImagesInZip(doc.getZip(), imageSources);
+
+      var out = doc.getZip().generate({
+        type: 'blob',
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      });
+
+      var siteName = (getVal('site-name') || 'Site').replace(/[^a-z0-9\-_]+/gi, '_');
+      var dateStr  = getVal('assess-date') || new Date().toISOString().slice(0, 10);
+      saveAs(out, 'ACF-Security-Assessment-' + siteName + '-' + dateStr + '.docx');
+
+      showToast('Word report generated!');
+    } catch (err) {
+      console.error(err);
+      var msg = 'Error generating Word report.';
+      if (err && err.properties && err.properties.errors && err.properties.errors.length) {
+        msg += ' ' + err.properties.errors
+          .map(function (e2) { return e2.properties && e2.properties.explanation; })
+          .filter(Boolean).join('; ');
+      } else if (err && err.message) {
+        msg += ' ' + err.message;
+      }
+      showToast(msg);
+    } finally {
+      input.value = ''; // allow re-selecting the same file later
+    }
+  };
+
+  reader.onerror = function () {
+    showToast('Could not read the selected file.');
+    input.value = '';
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
+// ============================================================
+// GENERATE REPORT
+// ============================================================
+function generateReport() {
+  var sketchImg   = capturedSketchDataURL||null;
+  var sketchEmpty = !capturedSketchDataURL;
+
+  // centre coords
+  var mainLat = getVal('main-lat'), mainLng = getVal('main-lng');
+  if (!mainLat && !mainLng) {
+    var pts = getAllPolyPoints();
+    if (pts.length) {
+      mainLat=(pts.reduce(function(s,p){return s+p.lat;},0)/pts.length).toFixed(6);
+      mainLng=(pts.reduce(function(s,p){return s+p.lng;},0)/pts.length).toFixed(6);
+    }
+  }
+  var mainCoords = (mainLat&&mainLng)?mainLat+', '+mainLng:'';
+
+  // photos — grouped by category
+  var photoLabels = {
+    overview:  '1 — Site Overview',
+    entry:     '2 — Camp Entry / Exit & Surroundings',
+    distrib:   '3 — Distribution Point (Entrance & Inside)',
+    safehaven: '4 — Safe Haven',
+    parking:   '5 — Parking Area'
+  };
+  var photosHTML = '';
+  var photoOrder = ['overview','entry','distrib','safehaven','parking'];
+  photoOrder.forEach(function(cat) {
+    if (!photos[cat] || !photos[cat].length) return;
+    photosHTML += '<div style="margin-bottom:14px;">'
+      + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray-500);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border);">'+photoLabels[cat]+'</div>'
+      + '<div class="report-photos-grid">'
+      + photos[cat].map(function(p,i){ return '<div class="report-photo-item"><img src="'+p.dataURL+'" alt="'+photoLabels[cat]+' '+(i+1)+'"><div class="report-photo-label">'+photoLabels[cat]+' · Photo '+(i+1)+'</div></div>'; }).join('')
+      + '</div></div>';
+  });
+  if (!photosHTML) photosHTML = '<p style="color:#bbb;font-style:italic;font-size:12px;margin-top:8px;">No photos attached.</p>';
+
+  // GPS corner rows
+  function gpsRow(c,ic){
+    var p=gpsPoints[c];
+    return '<div class="report-gps-item"><span class="corner">'+ic+' '+c+' Corner</span>'+(p?'<span class="coord">'+p.lat.toFixed(6)+', '+p.lng.toFixed(6)+'</span>':'<span class="coord" style="color:#bbb;font-style:italic;">Not captured</span>')+'</div>';
+  }
+
+  // drop pins table rows
+  var pinRows='';
+  if (dropPins.length) {
+    pinRows='<tr><td class="field-label">Additional Markers</td><td>'+
+      dropPins.map(function(p,i){ return pinEmoji(p.type)+' <strong>'+pinLabel(p.type)+'</strong>: '+p.lat.toFixed(6)+', '+p.lng.toFixed(6); }).join('<br>')+'</td></tr>';
+  }
+
+  // Named extra polygon points (edit-mode points)
+  var extraPolyRows = '';
+  if (extraPolyPoints.length) {
+    extraPolyRows = '<div class="report-h3" style="margin-top:14px;">Edit Mode — Additional Polygon Points</div>'
+      +'<table class="report-table"><thead><tr><th style="width:80px;">Point</th><th>Latitude</th><th>Longitude</th></tr></thead><tbody>'
+      + extraPolyPoints.map(function(p, i){
+          var name = p.name || ('P'+(i+1));
+          return '<tr><td class="field-label">'+name+'</td><td style="font-family:monospace;">'+p.lat.toFixed(6)+'</td><td style="font-family:monospace;">'+p.lng.toFixed(6)+'</td></tr>';
+        }).join('')
+      +'</tbody></table>';
+  }
+
+  // Multiple map screenshots
+  var mapShotsHTML = '';
+  if (mapScreenshots.length) {
+    mapShotsHTML = '<div class="report-h3" style="margin-top:22px;">Map View Screenshots ('+mapScreenshots.length+')</div>'
+      +'<p style="font-size:11px;color:#888;margin-bottom:8px;">Additional map views captured during assessment.</p>'
+      +'<div class="report-map-shots-grid">'
+      + mapScreenshots.map(function(s,i){
+          return '<div class="report-map-shot-item">'
+            +'<img src="'+s.dataURL+'" alt="'+s.label+'">'
+            +'<div class="report-map-shot-label">#'+(i+1)+' — '+s.label+'</div>'
+            +'<div class="report-map-shot-coords">Centre: '+s.center.lat.toFixed(5)+', '+s.center.lng.toFixed(5)+'  |  Zoom: '+s.zoom+'</div>'
+            +'</div>';
+        }).join('')
+      +'</div>';
+  }
+
+  var rDate = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  var rTime = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  var campDate=[getVal('camp-month'),getVal('camp-year')].filter(Boolean).join(' ');
+  var committee=getRadio('committee'), lrVal=getRadio('leader-resides');
+  var signalJawwal=getRadio('signal-jawwal'), signalOoredoo=getRadio('signal-ooredoo');
+  var carsAccess=getRadio('cars-access'), landType=getRadio('land-type'), ngos=getRadio('ngos');
+  var uxo=getRadio('uxo'), shVal=getRadio('safe-haven'), airstrikeVal=getRadio('airstrike');
+  var teamMembersList = [];
+  document.querySelectorAll('#team-member-list input[id]').forEach(function(el){ if (el.value.trim()) teamMembersList.push(el.value.trim()); });
+  var committeeDetails = [getVal('committee-total')?('Total: '+getVal('committee-total')):'', getVal('committee-males')?('Males: '+getVal('committee-males')):'', getVal('committee-females')?('Females: '+getVal('committee-females')):''].filter(Boolean).join(' · ');
+
+  var html = '\
+<div class="report-letterhead">\
+  <div class="report-acf-logo">ACF</div>\
+  <div class="report-title">\
+    <h1>Rapid Security Site Assessment</h1>\
+    <p>Action Against Hunger (ACF) — Security Operations</p>\
+    <p class="sop-ref">SOP Last updated: 12 October 2025 &nbsp;|&nbsp; Report generated: '+rDate+' at '+rTime+'</p>\
+  </div>\
+</div>\
+\
+<div class="report-h3" style="margin-top:0;">Section 1 — Assessment Team &amp; Identification</div>\
+<table class="report-table">\
+  <tr><td class="field-label">Team Members</td><td>'+fv(teamMembersList.join('<br>'))+'</td></tr>\
+  <tr><td class="field-label">Site Name</td><td><strong>'+fv(getVal('site-name'))+'</strong></td></tr>\
+  <tr><td class="field-label">Date &amp; Time</td><td>'+fv(getVal('assess-date')+(getVal('assess-time')?' at '+getVal('assess-time'):''))+'</td></tr>\
+</table>\
+\
+<div class="report-h3">Section 2 — Camp Information</div>\
+<table class="report-table">\
+  <tr><td class="field-label">Camp GPS</td><td>'+fv(getVal('camp-gps'))+'</td></tr>\
+  <tr><td class="field-label">GPS Coordinates (Centre)</td><td><strong>'+fv(mainCoords)+'</strong></td></tr>\
+  <tr><td class="field-label">Date Camp Set Up</td><td>'+fv(campDate)+'</td></tr>\
+  <tr><td class="field-label">Community Leader &amp; Contact</td><td>'+fv(getVal('leader-name'))+(getVal('leader-phone')?'<br>&#128222; '+getVal('leader-phone'):'')+'</td></tr>\
+  <tr><td class="field-label">Committee?</td><td>'+fv(committee)+(committeeDetails?'<br>'+committeeDetails:'')+(getVal('committee-notes')?'<br><em>'+getVal('committee-notes')+'</em>':'')+'</td></tr>\
+  <tr><td class="field-label">Deputy &amp; Contact</td><td>'+fv(getVal('deputy-name'))+(getVal('deputy-phone')?'<br>&#128222; '+getVal('deputy-phone'):'')+'</td></tr>\
+  <tr><td class="field-label">Leader Resides in Camp?</td><td>'+fv(lrVal)+(getVal('leader-location')?'<br><em>Location: '+getVal('leader-location')+'</em>':'')+'</td></tr>\
+  <tr><td class="field-label">Households / Individuals</td><td>'+fv(getVal('num-households'))+(getVal('num-individuals')?' / '+getVal('num-individuals')+' individuals':'')+'</td></tr>\
+  <tr><td class="field-label">Camp Type</td><td>'+fv(getRadio('camp-type'))+(getVal('camp-sectors')?'<br>Sectors: '+getVal('camp-sectors'):'')+(getVal('camp-type-desc')?'<br>'+getVal('camp-type-desc'):'')+'</td></tr>\
+</table>\
+\
+<div class="report-h3">Section 3 — Site Access, Land &amp; Communications</div>\
+<table class="report-table">\
+  <tr><td class="field-label">Vehicle Access</td><td>'+fv(carsAccess)+(getVal('cars-access-desc')?'<br>'+getVal('cars-access-desc'):'')+'</td></tr>\
+  <tr><td class="field-label">Open / Closed Land?</td><td>'+fv(landType)+(getVal('land-desc')?'<br>'+getVal('land-desc'):'')+'</td></tr>\
+  <tr><td class="field-label">Jawwal Signal</td><td>'+fv(signalJawwal)+'</td></tr>\
+  <tr><td class="field-label">Ooredoo Signal</td><td>'+fv(signalOoredoo)+'</td></tr>\
+  <tr><td class="field-label">Other NGOs Present?</td><td>'+fv(ngos)+(getVal('ngo-desc')?'<br>'+getVal('ngo-desc'):'')+'</td></tr>\
+</table>\
+\
+<div class="report-h3">Section 4 — Site Observations <span style="font-size:11px;color:#E67E22;font-weight:400;">(observation only — not asked)</span></div>\
+<table class="report-table">\
+  <tr><td class="field-label">Nearest Airstrike</td><td>'+fv(airstrikeVal)+(getVal('airstrike-date')?'<br>Date: '+getVal('airstrike-date'):'')+(getVal('obs-airstrike')?'<br>'+getVal('obs-airstrike'):'')+'</td></tr>\
+  <tr><td class="field-label">Rubble / UXO Signs?</td><td>'+fv(uxo)+(getVal('obs-uxo')?'<br>'+getVal('obs-uxo'):'')+'</td></tr>\
+  <tr><td class="field-label">Sensitive Infrastructure</td><td>'+fv(getVal('obs-sensitive'))+'</td></tr>\
+  <tr><td class="field-label">Safe Haven Identified?</td><td>'+fv(shVal)+(getVal('obs-safehaven')?'<br>'+getVal('obs-safehaven'):'')+'</td></tr>\
+  <tr><td class="field-label">Behavioural Observations</td><td>'+fv(getVal('obs-behavioral'))+'</td></tr>\
+</table>\
+\
+<div class="report-h3">Section 5 — GPS Corner Points &amp; Site Map</div>\
+<div class="report-gps-grid">'+gpsRow('NW','↖')+gpsRow('NE','↗')+gpsRow('SE','↘')+gpsRow('SW','↙')+'</div>\
+<table class="report-table" style="margin-top:10px;"><tbody>'+pinRows+'</tbody></table>\
+'+extraPolyRows+'\
+\
+<div class="report-h3" style="margin-top:22px;">Section 6 — Site Photos</div>\
+'+photosHTML+'\
+\
+<div class="report-h3" style="margin-top:22px;">Section 7 — Site Map Sketch (Uploaded Screenshots)</div>\
+<p style="font-size:11px;color:#888;margin-bottom:6px;">Screenshots of the map taken by the assessor showing the polygon, corners, and markers.</p>\
+'+(mapScreenshots.length===0?'<p style="color:#bbb;font-style:italic;font-size:12px;">No map screenshots uploaded. Use Section 5 or Section 7 to upload screenshots from your phone.</p>':mapScreenshots.map(function(s,i){ return '<div style="margin-bottom:16px;"><img src="'+s.dataURL+'" style="width:100%;border:1px solid #DDD;border-radius:4px;display:block;"><div style="font-size:11px;font-weight:700;color:#555;margin-top:5px;">#'+(i+1)+' — '+s.label+'</div></div>'; }).join(''))+'\
+\
+<div class="report-h3" style="margin-top:22px;">Section 8 — Assessment Team Analysis &amp; Recommendations</div>\
+<div class="report-analysis-box">'+(getVal('analysis')||'<em style="color:#bbb;">No analysis entered.</em>')+'</div>\
+<p style="font-size:12px;font-weight:700;color:#3D3D3D;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.3px;">Mitigation Measures</p>\
+<div class="report-analysis-box">'+(getVal('mitigations')||'<em style="color:#bbb;">No mitigation measures entered.</em>')+'</div>\
+\
+<div class="report-h3">Section 9 — Head of Base Decision</div>\
+<div class="report-analysis-box mgmt-placeholder">🔒 To be completed by Head of Base after review</div>\
+<table class="report-table">\
+  <tr><td class="field-label">Decision</td><td><span style="color:#bbb;font-style:italic;">Pending management review</span></td></tr>\
+  <tr><td class="field-label">Head of Base Name</td><td>&nbsp;</td></tr>\
+  <tr><td class="field-label">Date of Decision</td><td>&nbsp;</td></tr>\
+</table>\
+\
+<div class="report-sig-block">\
+  <div><div class="report-sig-line">Signature — Assessment Team Lead</div></div>\
+  <div><div class="report-sig-line">Signature — Head of Base</div></div>\
+</div>\
+<div class="report-footer">\
+  <span>ACF Security Site Assessment &nbsp;&middot;&nbsp; <strong>CONFIDENTIAL</strong></span>\
+  <span>Generated: '+rDate+' '+rTime+'</span>\
+</div>';
+
+  document.getElementById('report-content').innerHTML = html;
+  document.getElementById('report-page').classList.add('visible');
+  document.getElementById('report-page').scrollTop = 0;
+}
+
+function closeReport() { document.getElementById('report-page').classList.remove('visible'); }
+
+// ============================================================
+// FULLSCREEN MAP SCREENSHOT (full-mode capture)
+function captureFullscreenScreenshot() { /* replaced by manual upload */ }
+function addMapScreenshot() { /* replaced by manual upload */ }
+
+function pushMapScreenshot(dataURL, label, center, zoom) {
+  mapScreenshots.push({ dataURL:dataURL, label:label });
+  renderScreenshotsGallery();
+}
+
+function removeMapScreenshot(idx) {
+  mapScreenshots.splice(idx,1);
+  // Re-number labels
+  mapScreenshots.forEach(function(s,i){ s.label = 'Map View #'+(i+1); });
+  renderScreenshotsGallery();
+}
+
+function renderScreenshotsGallery() {
+  var count = mapScreenshots.length;
+
+  // ---- Section 5 gallery ----
+  var wrap5  = document.getElementById('map-screenshots-gallery');
+  var grid5  = document.getElementById('screenshots-grid');
+  var cnt5   = document.getElementById('screenshot-count');
+  if (cnt5)  cnt5.textContent = count;
+  if (wrap5) wrap5.style.display = count ? '' : 'none';
+
+  // ---- Section 7 gallery ----
+  var wrap7  = document.getElementById('map-screenshots-gallery-s7');
+  var grid7  = document.getElementById('screenshots-grid-s7');
+  var cnt7   = document.getElementById('sketch-shot-counter');
+  if (wrap7) wrap7.style.display = count ? '' : 'none';
+  if (cnt7)  { cnt7.textContent = count + ' / 6 uploaded'; cnt7.className = 'photo-counter' + (count >= 6 ? ' full' : ''); }
+
+  // Hide upload areas if at max
+  var uploadArea5 = document.querySelector('[onclick="document.getElementById(\'map-shots-input\').click()"]');
+  var uploadArea7 = document.querySelector('[onclick="document.getElementById(\'sketch-upload-input\').click()"]');
+  if (uploadArea5) uploadArea5.style.display = count >= 6 ? 'none' : '';
+  if (uploadArea7) uploadArea7.style.display = count >= 6 ? 'none' : '';
+
+  var thumbsHTML = mapScreenshots.map(function(s, i) {
+    return '<div class="map-screenshot-item">'
+      + '<span class="map-screenshot-num">#' + (i + 1) + '</span>'
+      + '<img src="' + s.dataURL + '" alt="' + s.label + '">'
+      + '<button class="map-screenshot-del" onclick="removeMapScreenshot(' + i + ')" title="Remove">✕</button>'
+      + '<div class="map-screenshot-caption">' + s.label + '</div>'
+      + '</div>';
+  }).join('');
+
+  if (grid5) grid5.innerHTML = thumbsHTML;
+  if (grid7) grid7.innerHTML = thumbsHTML;
+}
+
+updateNavButtons();
+</script>
+
+<datalist id="team-name-history"></datalist>
+<datalist id="site-name-history"></datalist>
+<datalist id="leader-name-history"></datalist>
+<datalist id="deputy-name-history"></datalist>
+</body>
+</html>
