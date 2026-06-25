@@ -147,7 +147,14 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .edit-banner.on{display:block;}
 
 .photo-upload-area{border:2px dashed var(--border);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--gray-50);position:relative;}
-.photo-btn-row{display:flex;gap:10px;margin-bottom:8px;}
+.extra-photo-slot{border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-bottom:10px;background:var(--gray-50);}
+.extra-photo-slot .photo-btn-row{margin-bottom:6px;}
+.extra-photo-slot textarea{width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;padding:8px;font-family:var(--font);font-size:13px;resize:vertical;margin-top:6px;}
+.extra-photo-slot .slot-preview{margin-top:6px;}
+.extra-photo-slot .slot-preview img{max-width:100%;border-radius:6px;max-height:180px;object-fit:cover;}
+.extra-slot-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.extra-slot-header span{font-size:12px;font-weight:700;color:var(--gray-700);}
+.extra-slot-remove{background:none;border:none;color:var(--gray-500);font-size:18px;cursor:pointer;padding:0 4px;}
 .photo-btn{flex:1;padding:14px 8px;border-radius:var(--radius);border:2px solid var(--border);background:var(--gray-50);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:5px;transition:all 0.15s;}
 .photo-btn:active{background:var(--red-light);border-color:var(--red);}
 .photo-btn .pb-icon{font-size:26px;}
@@ -280,7 +287,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
 <div class="progress-bar" id="progress-bar">
   <div class="prog-step active" onclick="goToPage(0)" data-page="0"><span class="step-num">1</span>Team</div>
-  <div class="prog-step" onclick="goToPage(1)" data-page="1"><span class="step-num">2</span>Camp</div>
+  <div class="prog-step" onclick="goToPage(1)" data-page="1"><span class="step-num">2</span>Site</div>
   <div class="prog-step" onclick="goToPage(2)" data-page="2"><span class="step-num">3</span>Access</div>
   <div class="prog-step" onclick="goToPage(3)" data-page="3"><span class="step-num">4</span>Observations</div>
   <div class="prog-step" onclick="goToPage(4)" data-page="4"><span class="step-num">8</span>Analysis</div>
@@ -306,7 +313,18 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <div class="section-card">
     <div class="section-header"><span class="sec-icon">📍</span><h2>Site Identification</h2></div>
     <div class="section-body">
-      <div class="field-group"><label>Site Name <span class="required">*</span></label><input type="text" id="site-name" list="site-name-history" placeholder="Official name of the site / camp"></div>
+      <!-- Site Type — drives conditional label changes throughout the form -->
+      <div class="field-group">
+        <label>Site Type <span class="required">*</span></label>
+        <div class="radio-group">
+          <div class="radio-btn"><input type="radio" name="site-type" id="st-idp" value="IDP Camp" checked><label for="st-idp">🏕️ IDP Camp</label></div>
+          <div class="radio-btn"><input type="radio" name="site-type" id="st-medical" value="Medical Point"><label for="st-medical">🏥 Medical Point</label></div>
+          <div class="radio-btn"><input type="radio" name="site-type" id="st-other" value="Other"><label for="st-other">📍 Other</label></div>
+        </div>
+      </div>
+      <div class="field-divider"></div>
+
+      <div class="field-group"><label id="label-site-name">Site Name <span class="required">*</span></label><input type="text" id="site-name" list="site-name-history" placeholder="Official name of the site"></div>
       <div class="row-2">
         <div class="field-group"><label>Date of Assessment <span class="required">*</span></label><input type="date" id="assess-date"></div>
         <div class="field-group"><label>Time</label><input type="time" id="assess-time"></div>
@@ -320,12 +338,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
 <!-- PAGE 1: Camp Info (Section 2) -->
 <div class="page" id="page-1">
-  <div class="step-page-title">Section 2 · Camp Information</div>
+  <div class="step-page-title">Section 2 · Site Information</div>
   <div class="section-card">
-    <div class="section-header"><span class="sec-icon">🏕️</span><h2>Camp Details</h2></div>
+    <div class="section-header"><span class="sec-icon">🏕️</span><h2>Site Details</h2></div>
     <div class="section-body">
       <div class="field-group">
-        <label>Camp GPS Coordinates</label>
+        <label>Site GPS Coordinates</label>
         <div class="row-2">
           <input type="text" id="camp-gps" placeholder="Latitude, Longitude" readonly style="background:var(--gray-50);">
           <button type="button" class="map-btn secondary" onclick="captureCampGPS()" style="flex:0 0 auto;">📍 Get Current Location</button>
@@ -333,7 +351,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
       <div class="field-divider"></div>
       <div class="field-group">
-        <label>Date Camp Was Set Up<span class="hint">Indicates level of control and organization.</span></label>
+        <label>Date Site Was Set Up<span class="hint">Indicates level of control and organization.</span></label>
         <div class="row-2">
           <select id="camp-month"><option value="">Month</option><option>January</option><option>February</option><option>March</option><option>April</option><option>May</option><option>June</option><option>July</option><option>August</option><option>September</option><option>October</option><option>November</option><option>December</option></select>
           <input type="number" id="camp-year" placeholder="Year" min="2000" max="2035">
@@ -364,11 +382,11 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <div class="field-group"><label>Comments</label><textarea id="committee-notes" rows="2" placeholder="Structure, additional contacts..."></textarea></div>
       </div>
       <div class="field-divider"></div>
-      <div class="field-group"><label>Camp Backup Representative (Deputy)</label><input type="text" id="deputy-name" list="deputy-name-history" placeholder="Full name"></div>
+      <div class="field-group"><label>Site Backup Representative (Deputy)</label><input type="text" id="deputy-name" list="deputy-name-history" placeholder="Full name"></div>
       <div class="field-group"><label>Deputy Phone</label><input type="tel" id="deputy-phone" placeholder="+XXX XXX XXX XXXX"></div>
       <div class="field-divider"></div>
       <div class="field-group">
-        <label>Does the community leader reside in the camp?<span class="hint">Facilitates security checks prior to arrival.</span></label>
+        <label>Does the community leader reside at the site?<span class="hint">Facilitates security checks prior to arrival.</span></label>
         <div class="radio-group">
           <div class="radio-btn"><input type="radio" name="leader-resides" id="lr-yes" value="Yes"><label for="lr-yes">✓ Yes</label></div>
           <div class="radio-btn"><input type="radio" name="leader-resides" id="lr-no" value="No"><label for="lr-no">✗ No</label></div>
@@ -379,12 +397,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
       <div class="field-divider"></div>
       <div class="row-2">
-        <div class="field-group"><label>Number of Households</label><input type="number" id="num-households" placeholder="e.g. 350" min="0"></div>
-        <div class="field-group"><label>Number of Individuals<span class="hint">Unknown: HH × 5.7</span></label><input type="number" id="num-individuals" placeholder="e.g. 1995" min="0"></div>
+        <div class="field-group"><label id="label-num-households">Number of Households</label><input type="number" id="num-households" placeholder="e.g. 350" min="0"></div>
+        <div class="field-group"><label id="label-num-individuals">Number of Individuals<span class="hint">Unknown: HH × 5.7</span></label><input type="number" id="num-individuals" placeholder="e.g. 1995" min="0"></div>
       </div>
       <div class="field-divider"></div>
       <div class="field-group">
-        <label>Camp Type<span class="hint">Stand-alone or part of a group?</span></label>
+        <label>Site Type — Structure<span class="hint">Stand-alone or part of a group?</span></label>
         <div class="radio-group" style="margin-bottom:8px;">
           <div class="radio-btn"><input type="radio" name="camp-type" id="ct-standalone" value="Stand-alone"><label for="ct-standalone">Stand-alone</label></div>
           <div class="radio-btn"><input type="radio" name="camp-type" id="ct-group" value="Part of a group"><label for="ct-group">Part of a group</label></div>
@@ -421,12 +439,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="section-header"><span class="sec-icon">🌍</span><h2>Land Type &amp; Surroundings</h2></div>
     <div class="section-body">
       <div class="field-group">
-        <label>Open or closed land?<span class="hint">Surrounding camps; important for security mitigations.</span></label>
+        <label>Open or closed land?<span class="hint">Surrounding areas; important for security mitigations.</span></label>
         <div class="radio-group" style="margin-bottom:8px;">
           <div class="radio-btn"><input type="radio" name="land-type" id="lt-open" value="Open land"><label for="lt-open">Open land</label></div>
           <div class="radio-btn"><input type="radio" name="land-type" id="lt-closed" value="Closed land"><label for="lt-closed">Closed land</label></div>
         </div>
-        <textarea id="land-desc" rows="3" placeholder="Surrounding camps, neighbouring areas, context..."></textarea>
+        <textarea id="land-desc" rows="3" placeholder="Surrounding sites, neighbouring areas, context..."></textarea>
       </div>
     </div>
   </div>
@@ -724,7 +742,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
       <!-- 2. Camp Entry / Exit -->
       <div class="field-group">
-        <label>2 — Camp Entry / Exit &amp; Surroundings
+        <label>2 — Site Entry / Exit &amp; Surroundings
           <span class="hint">Entrance gates, exit points, roads, and immediate surroundings.</span>
         </label>
         <div class="photo-btn-row">
@@ -815,6 +833,17 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <input type="file" id="photo-input-parking" accept="image/*" multiple style="display:none" onchange="handlePhotos('parking', this)">
         <div class="photo-counter" id="counter-parking">0 / 3</div>
         <div class="photo-preview-grid" id="preview-parking"></div>
+      </div>
+
+      <div class="field-divider"></div>
+
+      <!-- Additional Photos -->
+      <div class="field-group">
+        <label>Additional Photos <span style="font-weight:400;color:var(--gray-500);">(optional, up to 5)</span>
+          <span class="hint">Any extra photos relevant to the assessment — each can have a caption.</span>
+        </label>
+        <div id="additional-photos-list"></div>
+        <button type="button" class="map-btn secondary" onclick="addExtraPhotoSlot()" id="btn-add-extra-photo" style="width:100%;margin-top:8px;">+ Add Photo</button>
       </div>
 
     </div>
@@ -1033,6 +1062,7 @@ function collectFullAppState() {
   return {
     fields: fields, radios: radios,
     photos: photos, mapScreenshots: mapScreenshots, capturedSketchDataURL: capturedSketchDataURL,
+    extraPhotos: extraPhotos,
     gpsPoints: gpsPoints, extraPolyPoints: extraPolyPoints,
     dropPins: dropPins.map(function (p) { return { type: p.type, lat: p.lat, lng: p.lng }; }),
     savedAt: new Date().toISOString()
@@ -1099,6 +1129,8 @@ function applyDraftState(state) {
   if (mapFS) { restoreMarkersOnMap(mapFS, 'fs'); }
   updateStats();
   refreshAllConditionalSections();
+  applySiteTypeLabels();
+  if (state.extraPhotos) { extraPhotos = state.extraPhotos; renderExtraPhotoSlots(); }
 }
 function initAutosave() {
   document.addEventListener('input', function (e) {
@@ -1115,6 +1147,102 @@ function initAutosave() {
 // CONDITIONAL FOLLOW-UP SECTIONS — shown only for the relevant
 // Yes/No (or similar) answer, instead of always-visible fields
 // ============================================================
+// ============================================================
+// SITE TYPE — changes labels depending on IDP Camp vs Medical Point vs Other
+// ============================================================
+var SITE_TYPE_LABELS = {
+  'IDP Camp':      { siteName: 'Site Name', households: 'Number of Households', individuals: 'Number of Individuals<span class="hint">Unknown: HH × 5.7</span>' },
+  'Medical Point': { siteName: 'Medical Point Name', households: 'Number of Patients (General)', individuals: 'Number of Children' },
+  'Other':         { siteName: 'Site Name', households: 'Number of Households', individuals: 'Number of Individuals' }
+};
+function applySiteTypeLabels() {
+  var type = getRadio('site-type') || 'IDP Camp';
+  var labels = SITE_TYPE_LABELS[type] || SITE_TYPE_LABELS['IDP Camp'];
+  var el;
+  el = document.getElementById('label-site-name');
+  if (el) el.innerHTML = labels.siteName + ' <span class="required">*</span>';
+  el = document.getElementById('label-num-households');
+  if (el) el.innerHTML = labels.households;
+  el = document.getElementById('label-num-individuals');
+  if (el) el.innerHTML = labels.individuals;
+}
+function initSiteTypeListener() {
+  document.querySelectorAll('input[name="site-type"]').forEach(function (el) {
+    el.addEventListener('change', applySiteTypeLabels);
+  });
+  applySiteTypeLabels();
+}
+
+// ============================================================
+// EXTRA / ADDITIONAL PHOTOS (up to 5, each with a caption)
+// ============================================================
+var extraPhotos = []; // [{dataURL, caption}]
+var MAX_EXTRA_PHOTOS = 5;
+
+function addExtraPhotoSlot() {
+  if (extraPhotos.length >= MAX_EXTRA_PHOTOS) { showToast('Maximum 5 additional photos.'); return; }
+  var idx = extraPhotos.length;
+  extraPhotos.push({ dataURL: null, caption: '' });
+  renderExtraPhotoSlots();
+}
+
+function removeExtraPhotoSlot(idx) {
+  extraPhotos.splice(idx, 1);
+  renderExtraPhotoSlots();
+  scheduleAutosave();
+}
+
+function renderExtraPhotoSlots() {
+  var list = document.getElementById('additional-photos-list');
+  if (!list) return;
+  list.innerHTML = '';
+  extraPhotos.forEach(function (ph, idx) {
+    var div = document.createElement('div');
+    div.className = 'extra-photo-slot';
+    div.innerHTML =
+      '<div class="extra-slot-header">'
+      + '<span>Photo ' + (idx + 1) + '</span>'
+      + '<button type="button" class="extra-slot-remove" onclick="removeExtraPhotoSlot(' + idx + ')">✕</button>'
+      + '</div>'
+      + '<div class="photo-btn-row">'
+      + '<button type="button" class="photo-btn" onclick="document.getElementById(\'extra-cam-' + idx + '\').click()">'
+      + '<span class="pb-icon">📷</span><span class="pb-label">Camera</span></button>'
+      + '<button type="button" class="photo-btn" onclick="document.getElementById(\'extra-gal-' + idx + '\').click()">'
+      + '<span class="pb-icon">🖼</span><span class="pb-label">Gallery</span></button>'
+      + '</div>'
+      + '<input type="file" id="extra-cam-' + idx + '" accept="image/*" capture="environment" style="display:none" onchange="handleExtraPhoto(' + idx + ', this)">'
+      + '<input type="file" id="extra-gal-' + idx + '" accept="image/*" style="display:none" onchange="handleExtraPhoto(' + idx + ', this)">'
+      + (ph.dataURL ? '<div class="slot-preview"><img src="' + ph.dataURL + '"></div>' : '')
+      + '<textarea placeholder="Caption / description for this photo…" rows="2" onchange="updateExtraCaption(' + idx + ', this.value)">'
+      + (ph.caption || '') + '</textarea>';
+    list.appendChild(div);
+  });
+  var addBtn = document.getElementById('btn-add-extra-photo');
+  if (addBtn) addBtn.style.display = extraPhotos.length >= MAX_EXTRA_PHOTOS ? 'none' : '';
+}
+
+function handleExtraPhoto(idx, input) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    if (extraPhotos[idx] !== undefined) {
+      extraPhotos[idx].dataURL = e.target.result;
+      renderExtraPhotoSlots();
+      scheduleAutosave();
+    }
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function updateExtraCaption(idx, value) {
+  if (extraPhotos[idx] !== undefined) {
+    extraPhotos[idx].caption = value;
+    scheduleAutosave();
+  }
+}
+
 var CONDITIONAL_BINDINGS = [
   { radioName: 'committee',      showWhen: ['Yes'],                          containerId: 'committee-followup' },
   { radioName: 'leader-resides', showWhen: ['No'],                           containerId: 'leader-location-wrap' },
@@ -1153,6 +1281,7 @@ window.addEventListener('load', function() {
   renderDefaultTeamMembers();
   initPredictiveSuggestions();
   initConditionalSections();
+  initSiteTypeListener();
   updateNavButtons(); // ← always run this NOW, not after async operations
 
   // 2. Autosave listener (non-blocking)
@@ -1668,7 +1797,7 @@ function captureCampGPS() {
     function (p) {
       var lat = p.coords.latitude, lng = p.coords.longitude;
       document.getElementById('camp-gps').value = lat.toFixed(6) + ', ' + lng.toFixed(6);
-      showToast('Camp GPS captured!');
+      showToast('Site GPS captured!');
       scheduleAutosave();
     },
     function () { showToast('Location access denied.'); }
@@ -2241,6 +2370,10 @@ function gatherTemplateImageSources() {
   // (both call handleMapShots) — first image -> map tag, second -> sketch tag.
   sources['map-shots-input']     = mapScreenshots[0] ? mapScreenshots[0].dataURL : null;
   sources['sketch-upload-input'] = mapScreenshots[1] ? mapScreenshots[1].dataURL : null;
+  // Extra/additional photos — {extra-photo-1} … {extra-photo-5}
+  for (var ei = 0; ei < 5; ei++) {
+    sources['extra-photo-' + (ei + 1)] = (extraPhotos[ei] && extraPhotos[ei].dataURL) ? extraPhotos[ei].dataURL : null;
+  }
   return sources;
 }
 
@@ -2403,6 +2536,14 @@ function gatherTemplateData() {
     return 'P' + (i + 1) + ': ' + p.lat.toFixed(6) + ', ' + p.lng.toFixed(6);
   }).join('\n');
 
+  // Site type
+  data['site-type'] = getRadio('site-type') || 'IDP Camp';
+
+  // Extra photos — captions as text tags {extra-photo-caption-1} etc.
+  extraPhotos.forEach(function (ph, i) {
+    data['extra-photo-caption-' + (i + 1)] = ph.caption || '';
+  });
+
   return data;
 }
 
@@ -2445,7 +2586,7 @@ function generateWordReport() {
 
       var siteName = (getVal('site-name') || 'Site').replace(/[^a-z0-9\-_]+/gi, '_');
       var dateStr  = getVal('assess-date') || new Date().toISOString().slice(0, 10);
-      saveAs(out, 'ACF-Security-Assessment-' + siteName + '-' + dateStr + '.docx');
+      saveAs(out, siteName + '_Security_Site_Assessment_' + dateStr + '.docx');
 
       showToast('Word report generated!');
     } catch (err) {
@@ -2476,6 +2617,10 @@ function generateWordReport() {
 // GENERATE REPORT
 // ============================================================
 function generateReport() {
+  // Update page title so PDF filename = SiteName + Security Site Assessment
+  var siteNameForTitle = getVal('site-name') || 'Site';
+  document.title = siteNameForTitle + ' — Security Site Assessment';
+
   var sketchImg   = capturedSketchDataURL||null;
   var sketchEmpty = !capturedSketchDataURL;
 
@@ -2493,7 +2638,7 @@ function generateReport() {
   // photos — grouped by category
   var photoLabels = {
     overview:  '1 — Site Overview',
-    entry:     '2 — Camp Entry / Exit & Surroundings',
+    entry:     '2 — Site Entry / Exit & Surroundings',
     distrib:   '3 — Distribution Point (Entrance & Inside)',
     safehaven: '4 — Safe Haven',
     parking:   '5 — Parking Area'
@@ -2553,6 +2698,7 @@ function generateReport() {
 
   var rDate = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
   var rTime = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  var siteType = getRadio('site-type') || 'IDP Camp';
   var campDate=[getVal('camp-month'),getVal('camp-year')].filter(Boolean).join(' ');
   var committee=getRadio('committee'), lrVal=getRadio('leader-resides');
   var signalJawwal=getRadio('signal-jawwal'), signalOoredoo=getRadio('signal-ooredoo');
@@ -2575,20 +2721,21 @@ function generateReport() {
 <div class="report-h3" style="margin-top:0;">Section 1 — Assessment Team &amp; Identification</div>\
 <table class="report-table">\
   <tr><td class="field-label">Team Members</td><td>'+fv(teamMembersList.join('<br>'))+'</td></tr>\
+  <tr><td class="field-label">Site Type</td><td>'+fv(siteType)+'</td></tr>\
   <tr><td class="field-label">Site Name</td><td><strong>'+fv(getVal('site-name'))+'</strong></td></tr>\
   <tr><td class="field-label">Date &amp; Time</td><td>'+fv(getVal('assess-date')+(getVal('assess-time')?' at '+getVal('assess-time'):''))+'</td></tr>\
 </table>\
 \
-<div class="report-h3">Section 2 — Camp Information</div>\
+<div class="report-h3">Section 2 — Site Information</div>\
 <table class="report-table">\
   <tr><td class="field-label">Camp GPS</td><td>'+fv(getVal('camp-gps'))+'</td></tr>\
   <tr><td class="field-label">GPS Coordinates (Centre)</td><td><strong>'+fv(mainCoords)+'</strong></td></tr>\
-  <tr><td class="field-label">Date Camp Set Up</td><td>'+fv(campDate)+'</td></tr>\
+  <tr><td class="field-label">Date Site Set Up</td><td>'+fv(campDate)+'</td></tr>\
   <tr><td class="field-label">Community Leader &amp; Contact</td><td>'+fv(getVal('leader-name'))+(getVal('leader-phone')?'<br>&#128222; '+getVal('leader-phone'):'')+'</td></tr>\
   <tr><td class="field-label">Committee?</td><td>'+fv(committee)+(committeeDetails?'<br>'+committeeDetails:'')+(getVal('committee-notes')?'<br><em>'+getVal('committee-notes')+'</em>':'')+'</td></tr>\
   <tr><td class="field-label">Deputy &amp; Contact</td><td>'+fv(getVal('deputy-name'))+(getVal('deputy-phone')?'<br>&#128222; '+getVal('deputy-phone'):'')+'</td></tr>\
-  <tr><td class="field-label">Leader Resides in Camp?</td><td>'+fv(lrVal)+(getVal('leader-location')?'<br><em>Location: '+getVal('leader-location')+'</em>':'')+'</td></tr>\
-  <tr><td class="field-label">Households / Individuals</td><td>'+fv(getVal('num-households'))+(getVal('num-individuals')?' / '+getVal('num-individuals')+' individuals':'')+'</td></tr>\
+  <tr><td class="field-label">Leader Resides at Site?</td><td>'+fv(lrVal)+(getVal('leader-location')?'<br><em>Location: '+getVal('leader-location')+'</em>':'')+'</td></tr>\
+  <tr><td class="field-label">'+(siteType==='Medical Point'?'Patients (General)':'Households / Individuals')+'</td><td>'+fv(getVal('num-households'))+(getVal('num-individuals')?' / '+getVal('num-individuals')+(siteType==='Medical Point'?' children':' individuals'):'')+'</td></tr>\
   <tr><td class="field-label">Camp Type</td><td>'+fv(getRadio('camp-type'))+(getVal('camp-sectors')?'<br>Sectors: '+getVal('camp-sectors'):'')+(getVal('camp-type-desc')?'<br>'+getVal('camp-type-desc'):'')+'</td></tr>\
 </table>\
 \
@@ -2617,6 +2764,14 @@ function generateReport() {
 \
 <div class="report-h3" style="margin-top:22px;">Section 6 — Site Photos</div>\
 '+photosHTML+'\
+'+(extraPhotos.length > 0 ? '<div class="report-h3" style="margin-top:16px;">Additional Photos</div>'
+  + extraPhotos.map(function(ph, i){
+    return ph.dataURL
+      ? '<div style="margin-bottom:14px;"><img src="'+ph.dataURL+'" style="width:100%;border:1px solid #DDD;border-radius:4px;display:block;">'
+        + (ph.caption ? '<div style="font-size:11px;font-weight:700;color:#555;margin-top:4px;">'+(i+1)+'. '+ph.caption+'</div>' : '')
+        + '</div>'
+      : '';
+  }).join('') : '')+'\
 \
 <div class="report-h3" style="margin-top:22px;">Section 7 — Site Map Sketch (Uploaded Screenshots)</div>\
 <p style="font-size:11px;color:#888;margin-bottom:6px;">Screenshots of the map taken by the assessor showing the polygon, corners, and markers.</p>\
