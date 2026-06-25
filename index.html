@@ -1439,11 +1439,16 @@ async function downloadOfflineMapZip() {
       progText.innerHTML = line1+'<br><span style="font-size:11px;color:var(--gray-500);">'+(parts2.join('  ·  ')||'Starting…')+'</span>';
     }
 
+    // setInterval updates the UI every 500ms independently of the download workers
+    // This guarantees the progress bar moves even if the JS thread is busy
+    var uiTimer = setInterval(updateProgress, 500);
+
     // Quick connection test before committing to full download
     progText.innerHTML = '🔍 Testing tile server connection…';
     var testUrl = tiles[Math.floor(tiles.length/2)];
     var testBuf = await fetchTileWithRetry(testUrl, 2);
     if (!testBuf) {
+      clearInterval(uiTimer);
       progText.innerHTML = '❌ Cannot reach tile server — check internet and try again.';
       showToast('Cannot reach tile server. Check your connection.');
       return;
@@ -1451,10 +1456,9 @@ async function downloadOfflineMapZip() {
     zip.file('tiles/'+testUrl.split('/tile/')[1]+'.jpg', testBuf);
     bytesDownloaded += testBuf.byteLength; ok++; done++;
     nextIndex = 0; startTime = Date.now();
-    // mark test tile as already done
     var testIdx = tiles.indexOf(testUrl);
     if (testIdx >= 0) tiles.splice(testIdx, 1);
-    total = tiles.length + 1; // +1 for the test tile we already have
+    total = tiles.length + 1;
     updateProgress();
 
     async function worker() {
@@ -1468,20 +1472,17 @@ async function downloadOfflineMapZip() {
           bytesDownloaded += buf.byteLength; ok++;
         } else {
           fail++;
-          lastFailMsg = 'last fail: tile '+url.split('/tile/')[1];
+          lastFailMsg = 'last fail: '+url.split('/tile/')[1];
         }
         done++;
-        if (done % 10 === 0 || done === total) {
-          updateProgress();
-          // Yield to the browser so it can repaint the progress bar
-          await new Promise(function(r){ setTimeout(r, 0); });
-        }
       }
     }
 
     var workers = [];
     for (var w=0; w<CONCURRENCY; w++) workers.push(worker());
     await Promise.all(workers);
+    clearInterval(uiTimer);
+    updateProgress(); // final update
 
     if (offlineDownloadCancelled) {
       showToast('Cancelled.');
@@ -1501,6 +1502,7 @@ async function downloadOfflineMapZip() {
       showToast('ZIP saved! Import it on other devices using "Import Map ZIP".');
     }
   } catch(err) {
+    clearInterval(uiTimer);
     console.error('[ACF tiles]', err);
     progText.innerHTML = '❌ Error: '+(err&&err.message?err.message:String(err));
     showToast('Download failed: '+(err&&err.message?err.message:'unknown'));
