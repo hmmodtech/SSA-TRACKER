@@ -1386,7 +1386,7 @@ async function downloadOfflineMapZip() {
 
   statusBtn.disabled = true;
   statusBtn.textContent = '⏳ Downloading tiles…';
-  progWrap.style.display = '';
+  progWrap.style.display = 'block';
   cancelBtn.style.display = '';
 
   function formatMB(b) { return (b/(1024*1024)).toFixed(1)+' MB'; }
