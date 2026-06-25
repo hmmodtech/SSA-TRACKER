@@ -1389,95 +1389,121 @@ async function downloadOfflineMapZip() {
   progWrap.style.display = '';
   cancelBtn.style.display = '';
 
+  function formatMB(b) { return (b/(1024*1024)).toFixed(1)+' MB'; }
+  function formatTime(sec) {
+    if (!isFinite(sec)||sec<=0) return '…';
+    if (sec<60) return Math.round(sec)+'s';
+    if (sec<3600) return Math.floor(sec/60)+'m '+Math.round(sec%60)+'s';
+    return Math.floor(sec/3600)+'h '+Math.floor((sec%3600)/60)+'m';
+  }
+
+  async function fetchTileWithRetry(url, maxRetries) {
+    for (var attempt=0; attempt<maxRetries; attempt++) {
+      try {
+        if (attempt>0) await new Promise(function(r){ setTimeout(r, 1000*attempt); });
+        var resp = await fetch(url, { mode:'cors', credentials:'omit', cache:'no-store' });
+        if (resp.ok) {
+          var buf = await resp.arrayBuffer();
+          if (buf.byteLength>0) return buf;
+        }
+      } catch(e) {}
+    }
+    return null;
+  }
+
   try {
     var tiles = buildGazaTileList();
     var total = tiles.length;
-    var done = 0, ok = 0, fail = 0;
-    var bytesDownloaded = 0;
+    var done=0, ok=0, fail=0, bytesDownloaded=0;
     var startTime = Date.now();
-    var AVG_TILE_BYTES = 25600; // ~25KB fallback
     var nextIndex = 0;
-    var CONCURRENCY = 6;
+    var CONCURRENCY = 4;
     var zip = new PizZip();
-
-    function formatMB(b) { return (b / (1024 * 1024)).toFixed(1) + ' MB'; }
-    function formatTime(sec) {
-      if (sec < 60) return Math.round(sec) + 's';
-      if (sec < 3600) return Math.floor(sec / 60) + 'm ' + Math.round(sec % 60) + 's';
-      return Math.floor(sec / 3600) + 'h ' + Math.floor((sec % 3600) / 60) + 'm';
-    }
+    var lastFailMsg = '';
 
     function updateProgress() {
-      var pct = total ? Math.round((done / total) * 100) : 0;
-      progFill.style.width = pct + '%';
-
-      var elapsed = (Date.now() - startTime) / 1000;
-      var speed = elapsed > 2 ? bytesDownloaded / elapsed : 0; // bytes/sec
-
-      // Estimate total size based on observed average tile size
-      var avgTileSize = ok > 0 ? bytesDownloaded / ok : AVG_TILE_BYTES;
-      var estimatedTotal = avgTileSize * total;
-      var remaining = estimatedTotal - bytesDownloaded;
-
-      var eta = (speed > 0 && done < total) ? remaining / speed : 0;
-
-      var line1 = '📦 ' + formatMB(bytesDownloaded) + ' / ~' + formatMB(estimatedTotal)
-        + '  ·  ' + done.toLocaleString() + ' / ' + total.toLocaleString() + ' tiles  (' + pct + '%)';
-
-      var line2 = speed > 0
-        ? '⚡ ' + formatMB(speed) + '/s  ·  ⏱ ~' + formatTime(eta) + ' remaining'
-        : '⏱ Calculating speed…';
-
-      if (fail > 0) line2 += '  ·  ⚠ ' + fail + ' failed';
-
-      progText.innerHTML = line1 + '<br><span style="font-size:11px;color:var(--gray-500);">' + line2 + '</span>';
+      var pct = total ? Math.round((done/total)*100) : 0;
+      progFill.style.width = pct+'%';
+      var elapsed = (Date.now()-startTime)/1000;
+      var speed = (elapsed>3&&ok>0) ? bytesDownloaded/elapsed : 0;
+      var avgTile = ok>0 ? bytesDownloaded/ok : 25600;
+      var estTotal = avgTile*total;
+      var eta = speed>0 ? (estTotal-bytesDownloaded)/speed : 0;
+      var line1 = '📦 '+formatMB(bytesDownloaded)+' / ~'+formatMB(estTotal)
+        +'  ·  '+done.toLocaleString()+'/'+total.toLocaleString()+' ('+pct+'%)';
+      var parts2 = [];
+      if (speed>0) parts2.push('⚡ '+formatMB(speed)+'/s');
+      if (eta>0) parts2.push('⏱ ~'+formatTime(eta)+' left');
+      if (fail>0) parts2.push('⚠ '+fail+' failed');
+      if (lastFailMsg) parts2.push(lastFailMsg);
+      progText.innerHTML = line1+'<br><span style="font-size:11px;color:var(--gray-500);">'+(parts2.join('  ·  ')||'Starting…')+'</span>';
     }
+
+    // Quick connection test before committing to full download
+    progText.innerHTML = '🔍 Testing tile server connection…';
+    var testUrl = tiles[Math.floor(tiles.length/2)];
+    var testBuf = await fetchTileWithRetry(testUrl, 2);
+    if (!testBuf) {
+      progText.innerHTML = '❌ Cannot reach tile server — check internet and try again.';
+      showToast('Cannot reach tile server. Check your connection.');
+      return;
+    }
+    zip.file('tiles/'+testUrl.split('/tile/')[1]+'.jpg', testBuf);
+    bytesDownloaded += testBuf.byteLength; ok++; done++;
+    nextIndex = 0; startTime = Date.now();
+    // mark test tile as already done
+    var testIdx = tiles.indexOf(testUrl);
+    if (testIdx >= 0) tiles.splice(testIdx, 1);
+    total = tiles.length + 1; // +1 for the test tile we already have
     updateProgress();
 
     async function worker() {
-      while (nextIndex < total) {
+      while (nextIndex < tiles.length) {
         if (offlineDownloadCancelled) return;
         var i = nextIndex++;
         var url = tiles[i];
-        var parts = url.split('/tile/')[1];
-        var zipPath = 'tiles/' + parts + '.jpg';
-        try {
-          var resp = await fetch(url, { mode: 'cors', credentials: 'omit' });
-          if (resp && resp.ok) {
-            var buf = await resp.arrayBuffer();
-            zip.file(zipPath, buf);
-            bytesDownloaded += buf.byteLength;
-            ok++;
-          } else { fail++; }
-        } catch (e) { fail++; }
+        var buf = await fetchTileWithRetry(url, 3);
+        if (buf) {
+          zip.file('tiles/'+url.split('/tile/')[1]+'.jpg', buf);
+          bytesDownloaded += buf.byteLength; ok++;
+        } else {
+          fail++;
+          lastFailMsg = 'last fail: tile '+url.split('/tile/')[1];
+        }
         done++;
-        if (done % 10 === 0 || done === total) updateProgress();
+        if (done % 10 === 0 || done === total) {
+          updateProgress();
+          // Yield to the browser so it can repaint the progress bar
+          await new Promise(function(r){ setTimeout(r, 0); });
+        }
       }
     }
 
     var workers = [];
-    for (var w = 0; w < CONCURRENCY; w++) workers.push(worker());
+    for (var w=0; w<CONCURRENCY; w++) workers.push(worker());
     await Promise.all(workers);
 
     if (offlineDownloadCancelled) {
-      showToast('Cancelled — partial ZIP not saved.');
+      showToast('Cancelled.');
+    } else if (ok < total*0.5) {
+      progText.innerHTML = '❌ Too many failures ('+fail+'/'+total+'). Check connection.';
+      showToast('Download failed — too many tile errors.');
     } else {
-      progText.innerHTML = '⚙️ Packaging ZIP file… <span style="font-size:11px;color:var(--gray-500);">This may take 1-2 minutes for ' + formatMB(bytesDownloaded) + '</span>';
-      // Use setTimeout to let the DOM update before the heavy zip.generate() call blocks the thread
-      await new Promise(function(resolve){ setTimeout(resolve, 50); });
-      var blob = zip.generate({ type: 'blob', compression: 'STORE', mimeType: 'application/zip' });
+      progText.innerHTML = '⚙️ Packaging '+formatMB(bytesDownloaded)+'… (1-2 min)';
+      await new Promise(function(r){ setTimeout(r, 80); });
+      var blob = zip.generate({ type:'blob', compression:'STORE', mimeType:'application/zip' });
       saveAs(blob, 'acf-gaza-satellite-tiles.zip');
-
-      var totalTime = (Date.now() - startTime) / 1000;
-      var info = { downloadedAt: new Date().toISOString(), total: total, success: ok, failed: fail, bytesDownloaded: bytesDownloaded, maxZoom: TILE_MAX_ZOOM, source: 'zip' };
+      var elapsed2 = (Date.now()-startTime)/1000;
+      var info = { downloadedAt:new Date().toISOString(), total:total, success:ok, failed:fail, bytesDownloaded:bytesDownloaded, maxZoom:TILE_MAX_ZOOM, source:'zip' };
       localStorage.setItem('acfOfflineMapInfo', JSON.stringify(info));
       updateOfflineMapStatusUI();
-      progText.innerHTML = '✅ Done! ' + formatMB(bytesDownloaded) + ' · ' + ok.toLocaleString() + ' tiles · took ' + formatTime(totalTime);
-      showToast('ZIP saved! Transfer it to other devices and use "Import Map ZIP".');
+      progText.innerHTML = '✅ Done! '+formatMB(bytesDownloaded)+' · '+ok.toLocaleString()+' tiles · '+formatTime(elapsed2);
+      showToast('ZIP saved! Import it on other devices using "Import Map ZIP".');
     }
-  } catch (err) {
-    console.error(err);
-    showToast('ZIP download failed: ' + (err && err.message ? err.message : 'unknown error'));
+  } catch(err) {
+    console.error('[ACF tiles]', err);
+    progText.innerHTML = '❌ Error: '+(err&&err.message?err.message:String(err));
+    showToast('Download failed: '+(err&&err.message?err.message:'unknown'));
   } finally {
     offlineDownloadInProgress = false;
     statusBtn.disabled = false;
