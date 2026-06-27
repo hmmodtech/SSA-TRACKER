@@ -32,15 +32,83 @@ function showDiagBanner() {
 
 <style>
 :root {
-  --red:#2471A3; --red-dark:#154360; --red-light:#D4E6F1;
-  --gray-900:#1A1A1A; --gray-700:#3D3D3D; --gray-500:#6B6B6B;
-  --gray-300:#CCCCCC; --gray-100:#F5F5F5; --gray-50:#FAFAFA;
-  --white:#FFFFFF; --border:#DCDCDC;
-  --shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.06);
-  --radius:6px; --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+  /* Light Mode (default) */
+  --bg:       #F1F3F4;
+  --surface:  #FFFFFF;
+  --text:     #202124;
+  --text-sec: #5F6368;
+  --border:   #DADCE0;
+  --primary:  #1A73E8;
+  --primary-dark: #1558B0;
+  --primary-light: #D2E3FC;
+  --warning:  #F29900;
+  --danger:   #D93025;
+  --danger-light: #FCE8E6;
+  --success:  #1E8E3E;
+  --yellow:   #FBBC04;
+  --shadow: 0 1px 3px rgba(0,0,0,0.10),0 1px 2px rgba(0,0,0,0.06);
+  --radius: 6px;
+  --font: -apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+  /* Legacy aliases for existing CSS */
+  --red:       var(--primary);
+  --red-dark:  var(--primary-dark);
+  --red-light: var(--primary-light);
+  --white:     var(--surface);
+  --gray-900:  #202124;
+  --gray-700:  #3C4043;
+  --gray-500:  #5F6368;
+  --gray-300:  #DADCE0;
+  --gray-100:  #F1F3F4;
+  --gray-50:   #F8F9FA;
+}
+body.dark-mode input[type="text"],body.dark-mode input[type="date"],body.dark-mode input[type="time"],
+body.dark-mode input[type="tel"],body.dark-mode input[type="number"],body.dark-mode select,body.dark-mode textarea{
+  background:var(--surface);color:var(--text);border-color:var(--border);}
+body.dark-mode .section-card,body.dark-mode .field-group,body.dark-mode .offline-map-panel,
+body.dark-mode .extra-photo-slot,body.dark-mode .info-box{background:var(--surface);}
+body.dark-mode .progress-bar,body.dark-mode .nav-buttons{background:var(--surface);border-color:var(--border);}
+body.dark-mode .page{background:var(--bg);}
+body.dark-mode .radio-btn label{background:var(--surface);border-color:var(--border);color:var(--text);}
+body.dark-mode .radio-btn input:checked+label{background:var(--primary-light);border-color:var(--primary);color:var(--primary-dark);}
+body.dark-mode .map-btn.secondary{background:var(--surface);color:var(--text);border-color:var(--border);}
+body.dark-mode .layer-btn.active{background:var(--surface);}
+body.dark-mode .step-page-title{background:var(--surface);color:var(--text);}
+body.dark-mode .toast{background:var(--text);color:var(--bg);}
+body.dark-mode .offline-map-progress-bar{background:var(--border);}
+body.dark-mode .photo-btn{background:var(--surface);border-color:var(--border);color:var(--text);}
+body.dark-mode .photo-btn .pb-label{color:var(--text);}
+body.dark-mode .committee-followup, body.dark-mode [id$="-followup"],body.dark-mode [id$="-wrap"]{background:var(--bg);}
+body.dark-mode .report-page{background:var(--surface);color:var(--text);}
+body.dark-mode .report-table td{border-color:var(--border);}
+body.dark-mode .field-label{background:var(--bg);color:var(--text-sec);}
+body.dark-mode .app-header{background:#0C0E11;border-bottom:1px solid var(--border);}
+body.dark-mode .section-header{background:#0C0E11;}
+  --bg:       #0C0E11;
+  --surface:  #14171D;
+  --text:     #E8EAED;
+  --text-sec: #9AA0A6;
+  --border:   #2D3139;
+  --primary:  #1A73E8;
+  --primary-dark: #4A90E2;
+  --primary-light: #1C2B3A;
+  --warning:  #F29900;
+  --danger:   #D93025;
+  --danger-light: #2D1210;
+  --success:  #188038;
+  --yellow:   #FBBC04;
+  --shadow: 0 1px 4px rgba(0,0,0,0.4);
+  /* Legacy aliases */
+  --white:     var(--surface);
+  --gray-900:  #E8EAED;
+  --gray-700:  #BDC1C6;
+  --gray-500:  #9AA0A6;
+  --gray-300:  #3C4043;
+  --gray-100:  #1E2125;
+  --gray-50:   #14171D;
+}
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:var(--font);background:var(--gray-100);color:var(--gray-900);font-size:14px;line-height:1.5;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;transition:background 0.2s,color 0.2s;}
 
 .app-header{background:var(--red);color:var(--white);padding:14px 16px;position:sticky;top:0;z-index:200;box-shadow:0 2px 6px rgba(0,0,0,0.2);display:flex;align-items:center;gap:12px;}
 .app-header .logo-block{background:var(--white);color:var(--red);font-weight:900;font-size:16px;letter-spacing:-0.5px;padding:4px 8px;border-radius:3px;line-height:1;flex-shrink:0;}
@@ -223,9 +291,11 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .report-analysis-box{border:1.5px solid var(--border);border-radius:4px;padding:14px 16px;margin-bottom:16px;min-height:80px;font-size:13px;line-height:1.6;white-space:pre-wrap;}
 .report-analysis-box.hob{border-left:4px solid var(--red);background:#FFF8F7;}
 .report-analysis-box.mgmt-placeholder{background:#D4E6F1;border:2px dashed var(--red);color:var(--red-dark);font-style:italic;text-align:center;padding:30px;}
-.report-photos-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:10px;}
-.report-photo-item img{width:100%;height:auto;max-height:480px;object-fit:cover;border:1px solid var(--border);border-radius:4px;display:block;}
-.report-photo-label{font-size:11px;font-weight:600;color:var(--gray-700);margin-top:5px;}
+.report-photos-grid{display:flex;flex-direction:column;gap:20px;margin-top:10px;}
+.report-photo-item{width:100%;}
+.report-photo-item img{width:100%;height:auto;border:1px solid var(--border);border-radius:6px;display:block;box-shadow:0 2px 8px rgba(0,0,0,0.12);}
+.report-photo-item img.portrait{max-height:700px;object-fit:contain;}
+.report-photo-label{font-size:12px;font-weight:700;color:var(--gray-700);margin-top:6px;padding-left:2px;}
 .photo-counter{font-size:11px;font-weight:700;color:var(--gray-500);margin-top:6px;text-align:right;}
 .photo-counter.full{color:#2471A3;}
 .report-sketch-img{width:100%;border:1px solid var(--border);border-radius:4px;margin-top:10px;}
@@ -285,6 +355,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <h1>Security Site Assessment</h1>
     <p>Rapid Assessment · SOP — Last update: 12 Oct 2025</p>
   </div>
+  <button id="dark-mode-toggle" onclick="toggleDarkMode()" style="background:none;border:1px solid rgba(255,255,255,0.4);border-radius:20px;color:white;padding:5px 11px;font-size:16px;cursor:pointer;flex-shrink:0;" title="Toggle dark/light mode">🌙</button>
 </div>
 
 <div class="progress-bar" id="progress-bar">
@@ -933,6 +1004,26 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 </div>
 
 <script>
+// ============================================================
+// DARK / LIGHT MODE
+// ============================================================
+function toggleDarkMode() {
+  var isDark = document.body.classList.toggle('dark-mode');
+  localStorage.setItem('acfTheme', isDark ? 'dark' : 'light');
+  var btn = document.getElementById('dark-mode-toggle');
+  if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+}
+function initTheme() {
+  var saved = localStorage.getItem('acfTheme');
+  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (saved === 'dark' || (!saved && prefersDark)) {
+    document.body.classList.add('dark-mode');
+    var btn = document.getElementById('dark-mode-toggle');
+    if (btn) btn.textContent = '☀️';
+  }
+}
+initTheme();
+
 // ============================================================
 // STATE
 // ============================================================
@@ -2848,7 +2939,12 @@ function generateReport() {
     photosHTML += '<div style="margin-bottom:14px;">'
       + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--gray-500);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border);">'+photoLabels[cat]+'</div>'
       + '<div class="report-photos-grid">'
-      + photos[cat].map(function(p,i){ return '<div class="report-photo-item"><img src="'+p.dataURL+'" alt="'+photoLabels[cat]+' '+(i+1)+'"><div class="report-photo-label">'+photoLabels[cat]+' · Photo '+(i+1)+'</div></div>'; }).join('')
+      + photos[cat].map(function(p,i){
+          // Detect portrait by checking dataURL dimensions via a temp image
+          var imgTag = '<img src="'+p.dataURL+'" alt="'+photoLabels[cat]+' '+(i+1)+'" '
+            + 'onload="if(this.naturalHeight>this.naturalWidth)this.classList.add(\'portrait\')">';
+          return '<div class="report-photo-item">'+imgTag+'<div class="report-photo-label">'+photoLabels[cat]+' · Photo '+(i+1)+'</div></div>';
+        }).join('')
       + '</div></div>';
   });
   if (!photosHTML) photosHTML = '<p style="color:#bbb;font-style:italic;font-size:12px;margin-top:8px;">No photos attached.</p>';
