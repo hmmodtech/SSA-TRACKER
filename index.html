@@ -223,8 +223,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .report-analysis-box{border:1.5px solid var(--border);border-radius:4px;padding:14px 16px;margin-bottom:16px;min-height:80px;font-size:13px;line-height:1.6;white-space:pre-wrap;}
 .report-analysis-box.hob{border-left:4px solid var(--red);background:#FFF8F7;}
 .report-analysis-box.mgmt-placeholder{background:#D4E6F1;border:2px dashed var(--red);color:var(--red-dark);font-style:italic;text-align:center;padding:30px;}
-.report-photos-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:10px;}
-.report-photo-item img{width:100%;height:160px;object-fit:cover;border:1px solid var(--border);border-radius:4px;display:block;}
+.report-photos-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:10px;}
+.report-photo-item img{width:100%;height:auto;max-height:480px;object-fit:cover;border:1px solid var(--border);border-radius:4px;display:block;}
 .report-photo-label{font-size:11px;font-weight:600;color:var(--gray-700);margin-top:5px;}
 .photo-counter{font-size:11px;font-weight:700;color:var(--gray-500);margin-top:6px;text-align:right;}
 .photo-counter.full{color:#2471A3;}
@@ -265,7 +265,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   #report-page{position:static;overflow:visible;background:white;}
   .report-toolbar{display:none;}
   .report-doc{box-shadow:none;margin:0;padding:20px;}
-  .report-photos-grid{grid-template-columns:repeat(2,1fr);}
+  .report-photos-grid{grid-template-columns:1fr;}
+  .report-photo-item img{max-height:400px;}
 }
 @media(max-width:480px){
   .report-doc{padding:20px 16px;}
@@ -1233,6 +1234,7 @@ function handleExtraPhoto(idx, input) {
       extraPhotos[idx].dataURL = e.target.result;
       renderExtraPhotoSlots();
       scheduleAutosave();
+      autoSavePhotoToDevice(e.target.result, 'extra', idx, file.name);
     }
   };
   reader.readAsDataURL(file);
@@ -2292,7 +2294,15 @@ function handlePhotos(category, input) {
   if (remaining <= 0) { showToast('Maximum 3 photos per category.'); input.value = ''; return; }
   files.slice(0, remaining).forEach(function(f) {
     var reader = new FileReader();
-    reader.onload = function(e) { photos[category].push({ dataURL: e.target.result }); renderPhotoPreviews(category); };
+    reader.onload = function(e) {
+      var photoObj = { dataURL: e.target.result };
+      photos[category].push(photoObj);
+      renderPhotoPreviews(category);
+      scheduleAutosave();
+      // Auto-save to device
+      var idx = photos[category].length - 1;
+      autoSavePhotoToDevice(e.target.result, category, idx, f.name);
+    };
     reader.readAsDataURL(f);
   });
   input.value = '';
@@ -2320,6 +2330,36 @@ function renderPhotoPreviews(category) {
 function removePhoto(cat, idx) {
   photos[cat].splice(idx, 1);
   renderPhotoPreviews(cat);
+}
+
+function autoSavePhotoToDevice(dataURL, category, idx, originalName) {
+  // Use Web Share API (available in Android Chrome/TWA) to save to gallery
+  try {
+    var mime = dataURL.split(',')[0].match(/:(.*?);/)[1];
+    var byteStr = atob(dataURL.split(',')[1]);
+    var ab = new ArrayBuffer(byteStr.length);
+    var ia = new Uint8Array(ab);
+    for (var i = 0; i < byteStr.length; i++) ia[i] = byteStr.charCodeAt(i);
+    var blob = new Blob([ab], { type: mime });
+    var ext = mime.split('/')[1] || 'jpg';
+    var siteName = (getVal('site-name') || 'site').replace(/\s+/g,'_');
+    var timestamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+    var filename = 'ACF_' + siteName + '_' + category + '_' + (idx+1) + '_' + timestamp + '.' + ext;
+    var file = new File([blob], filename, { type: mime });
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file] }).catch(function(){});
+      return;
+    }
+  } catch(e) {}
+  // Fallback: silent download (desktop)
+  try {
+    var a = document.createElement('a');
+    a.href = dataURL;
+    a.download = 'ACF_' + (getVal('site-name')||'site') + '_' + category + '_' + (idx+1) + '.jpg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } catch(e) {}
 }
 
 function savePhotoToDevice(category, idx) {
