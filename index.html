@@ -32,99 +32,191 @@ function showDiagBanner() {
 
 <style>
 :root {
-  /* Light Mode (default) */
-  --bg:       #F1F3F4;
-  --surface:  #FFFFFF;
-  --text:     #202124;
-  --text-sec: #5F6368;
-  --border:   #DADCE0;
-  --primary:  #1A73E8;
-  --primary-dark: #1558B0;
-  --primary-light: #D2E3FC;
-  --warning:  #F29900;
-  --danger:   #D93025;
-  --danger-light: #FCE8E6;
-  --success:  #1E8E3E;
-  --yellow:   #FBBC04;
-  --shadow: 0 1px 3px rgba(0,0,0,0.10),0 1px 2px rgba(0,0,0,0.06);
-  --radius: 6px;
-  --font: -apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
-  /* Legacy aliases for existing CSS */
-  --red:       var(--primary);
-  --red-dark:  var(--primary-dark);
-  --red-light: var(--primary-light);
-  --white:     var(--surface);
-  --gray-900:  #202124;
-  --gray-700:  #3C4043;
-  --gray-500:  #5F6368;
-  --gray-300:  #DADCE0;
-  --gray-100:  #F1F3F4;
-  --gray-50:   #F8F9FA;
+  /* ── LIGHT MODE (matches M-TRACKER light palette) ── */
+  --bg:           #F6F8FA;
+  --surface:      #FFFFFF;
+  --surface-2:    #F6F8FA;
+  --text:         #24292F;
+  --text-sec:     #57606A;
+  --border:       #D0D7DE;
+  --primary:      #0969DA;
+  --primary-dark: #0550AE;
+  --primary-light:#DDF4FF;
+  --accent:       #E36209;
+  --warning:      #F29900;
+  --danger:       #D1242F;
+  --danger-light: #FFEBE9;
+  --success:      #1A7F37;
+  --success-light:#DCFFE4;
+  --yellow:       #9A6700;
+  --shadow:       0 1px 3px rgba(31,35,40,0.12),0 1px 2px rgba(31,35,40,0.08);
+  --radius:       6px;
+  --font:         -apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+  /* Legacy aliases */
+  --red:          var(--accent);
+  --red-dark:     #953000;
+  --red-light:    #FFF1E5;
+  --white:        var(--surface);
+  --gray-900:     #24292F;
+  --gray-700:     #424A53;
+  --gray-500:     #57606A;
+  --gray-300:     #D0D7DE;
+  --gray-100:     #F6F8FA;
+  --gray-50:      #F6F8FA;
 }
+
+body.dark-mode {
+  /* ── DARK MODE (matches M-TRACKER dark palette) ── */
+  --bg:           #0D1117;
+  --surface:      #161B22;
+  --surface-2:    #1C2128;
+  --text:         #E6EDF3;
+  --text-sec:     #8B949E;
+  --border:       #30363D;
+  --primary:      #2F81F7;
+  --primary-dark: #58A6FF;
+  --primary-light:#1C2B3A;
+  --accent:       #F0883E;
+  --warning:      #F0883E;
+  --danger:       #F85149;
+  --danger-light: #3D1F1F;
+  --success:      #3FB950;
+  --success-light:#1A2E1A;
+  --yellow:       #E3B341;
+  --shadow:       0 1px 4px rgba(0,0,0,0.5);
+  /* Legacy aliases */
+  --red:          var(--accent);
+  --red-dark:     #FFAB70;
+  --red-light:    #2D1F0E;
+  --white:        var(--surface);
+  --gray-900:     #E6EDF3;
+  --gray-700:     #C9D1D9;
+  --gray-500:     #8B949E;
+  --gray-300:     #30363D;
+  --gray-100:     #1C2128;
+  --gray-50:      #161B22;
+}
+
+/* ── DARK MODE element overrides ───────────────────────── */
 body.dark-mode input[type="text"],body.dark-mode input[type="date"],body.dark-mode input[type="time"],
 body.dark-mode input[type="tel"],body.dark-mode input[type="number"],body.dark-mode select,body.dark-mode textarea{
-  background:var(--surface);color:var(--text);border-color:var(--border);}
-body.dark-mode .section-card,body.dark-mode .field-group,body.dark-mode .offline-map-panel,
-body.dark-mode .extra-photo-slot,body.dark-mode .info-box{background:var(--surface);}
-body.dark-mode .progress-bar,body.dark-mode .nav-buttons{background:var(--surface);border-color:var(--border);}
-body.dark-mode .page{background:var(--bg);}
-body.dark-mode .radio-btn label{background:var(--surface);border-color:var(--border);color:var(--text);}
-body.dark-mode .radio-btn input:checked+label{background:var(--primary-light);border-color:var(--primary);color:var(--primary-dark);}
-body.dark-mode .map-btn.secondary{background:var(--surface);color:var(--text);border-color:var(--border);}
-body.dark-mode .layer-btn.active{background:var(--surface);}
-body.dark-mode .step-page-title{background:var(--surface);color:var(--text);}
-body.dark-mode .toast{background:var(--text);color:var(--bg);}
-body.dark-mode .offline-map-progress-bar{background:var(--border);}
-body.dark-mode .photo-btn{background:var(--surface);border-color:var(--border);color:var(--text);}
-body.dark-mode .photo-btn .pb-label{color:var(--text);}
-body.dark-mode .committee-followup, body.dark-mode [id$="-followup"],body.dark-mode [id$="-wrap"]{background:var(--bg);}
-body.dark-mode .report-page{background:var(--surface);color:var(--text);}
-body.dark-mode .report-table td{border-color:var(--border);}
-body.dark-mode .field-label{background:var(--bg);color:var(--text-sec);}
-body.dark-mode .app-header{background:#0C0E11;border-bottom:1px solid var(--border);}
-body.dark-mode .section-header{background:#0C0E11;}
-  --bg:       #0C0E11;
-  --surface:  #14171D;
-  --text:     #E8EAED;
-  --text-sec: #9AA0A6;
-  --border:   #2D3139;
-  --primary:  #1A73E8;
-  --primary-dark: #4A90E2;
-  --primary-light: #1C2B3A;
-  --warning:  #F29900;
-  --danger:   #D93025;
-  --danger-light: #2D1210;
-  --success:  #188038;
-  --yellow:   #FBBC04;
-  --shadow: 0 1px 4px rgba(0,0,0,0.4);
-  /* Legacy aliases */
-  --white:     var(--surface);
-  --gray-900:  #E8EAED;
-  --gray-700:  #BDC1C6;
-  --gray-500:  #9AA0A6;
-  --gray-300:  #3C4043;
-  --gray-100:  #1E2125;
-  --gray-50:   #14171D;
-}
-}
+  background:#0D1117;color:#E6EDF3;border-color:#30363D;}
+body.dark-mode .section-card,body.dark-mode .offline-map-panel,
+body.dark-mode .extra-photo-slot,body.dark-mode .info-box{background:#161B22;}
+body.dark-mode .nav-buttons{background:#010409;border-color:#21262D;}
+body.dark-mode .page{background:#0D1117;}
+body.dark-mode .radio-btn label{background:#161B22;border-color:#30363D;color:#E6EDF3;}
+body.dark-mode .radio-btn input:checked+label{background:rgba(240,136,62,0.15);border-color:#F0883E;color:#F0883E;}
+body.dark-mode .map-btn.secondary{background:#161B22;color:#E6EDF3;border-color:#30363D;}
+body.dark-mode .map-btn.secondary:hover{background:#1C2128;}
+body.dark-mode .layer-btn{background:#161B22;color:#8B949E;}
+body.dark-mode .layer-btn.active{background:#1C2128;color:#F0883E;}
+body.dark-mode .step-page-title{background:#161B22;color:#E6EDF3;}
+body.dark-mode .toast{background:#E6EDF3;color:#0D1117;}
+body.dark-mode .offline-map-progress-bar{background:#30363D;}
+body.dark-mode .photo-btn{background:#161B22;border-color:#30363D;color:#E6EDF3;}
+body.dark-mode .photo-btn .pb-label{color:#C9D1D9;}
+body.dark-mode .report-page{background:#161B22;color:#E6EDF3;}
+body.dark-mode .report-table td{border-color:#30363D;}
+body.dark-mode .field-label{background:#161B22;color:#8B949E;}
+body.dark-mode .section-header{background:#161B22;border-color:#30363D;}
+body.dark-mode .app-header{background:#010409;border-bottom:1px solid #21262D;}
+body.dark-mode .sidebar{background:#010409;border-right-color:#21262D;}
+body.dark-mode .sidebar-step:hover{background:rgba(230,237,243,0.03);}
+body.dark-mode .btn-primary{background:#F0883E;color:#fff;}
+body.dark-mode .btn-generate{background:#238636;color:#fff;}
+body.dark-mode .offline-map-status.ready{color:#3FB950;}
+body.dark-mode .offline-map-status.partial{color:#F0883E;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;transition:background 0.2s,color 0.2s;}
 
-.app-header{background:var(--red);color:var(--white);padding:14px 16px;position:sticky;top:0;z-index:200;box-shadow:0 2px 6px rgba(0,0,0,0.2);display:flex;align-items:center;gap:12px;}
-.app-header .logo-block{background:var(--white);color:var(--red);font-weight:900;font-size:16px;letter-spacing:-0.5px;padding:4px 8px;border-radius:3px;line-height:1;flex-shrink:0;}
-.app-header .title-block h1{font-size:15px;font-weight:700;letter-spacing:0.2px;}
-.app-header .title-block p{font-size:11px;opacity:0.85;margin-top:1px;}
+.app-header{background:#24292F;color:#E6EDF3;padding:12px 16px;position:sticky;top:0;z-index:200;box-shadow:0 1px 0 #444C56;display:flex;align-items:center;gap:12px;}
+.app-header .logo-block{background:#F0883E;color:#fff;font-weight:900;font-size:14px;letter-spacing:-0.5px;padding:4px 8px;border-radius:3px;line-height:1;flex-shrink:0;}
+.app-header .title-block h1{font-size:14px;font-weight:600;color:#E6EDF3;letter-spacing:0.1px;}
+.app-header .title-block p{font-size:11px;color:#8B949E;margin-top:1px;}
 
-.progress-bar{background:var(--white);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
-.progress-bar::-webkit-scrollbar{display:none;}
-.prog-step{flex-shrink:0;padding:10px 14px;font-size:11px;font-weight:600;color:var(--gray-500);border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;transition:all 0.15s;user-select:none;}
-.prog-step.active{color:var(--red);border-bottom-color:var(--red);}
-.prog-step.done{color:var(--gray-700);}
-.prog-step .step-num{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--gray-300);color:var(--white);font-size:10px;margin-right:5px;font-weight:700;}
-.prog-step.active .step-num{background:var(--red);}
-.prog-step.done .step-num{background:#27AE60;}
+/* ── LAYOUT ─────────────────────────────────────────────── */
+.app-layout{display:flex;min-height:calc(100vh - 60px);}
 
-.main{padding:16px;max-width:640px;margin:0 auto;padding-bottom:80px;}
+/* LEFT SIDEBAR */
+.sidebar{
+  width:72px;
+  flex-shrink:0;
+  background:#161B22;
+  border-right:1px solid #30363D;
+  position:fixed;
+  top:60px;
+  bottom:70px;
+  left:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  scrollbar-width:none;
+  z-index:100;
+  display:flex;
+  flex-direction:column;
+  padding:8px 0;
+  transition:width 0.2s;
+}
+.sidebar::-webkit-scrollbar{display:none;}
+.sidebar:hover{width:160px;}
+
+.sidebar-step{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:11px 12px;
+  cursor:pointer;
+  border-left:3px solid transparent;
+  transition:all 0.15s;
+  user-select:none;
+  overflow:hidden;
+  white-space:nowrap;
+  min-height:44px;
+}
+.sidebar-step:hover{background:rgba(255,255,255,0.05);}
+.sidebar-step.active{border-left-color:#F0883E;background:rgba(240,136,62,0.1);}
+.sidebar-step.done{border-left-color:#3FB950;}
+
+.sidebar-num{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  background:#30363D;
+  color:#8B949E;
+  font-size:11px;
+  font-weight:700;
+  flex-shrink:0;
+}
+.sidebar-step.active .sidebar-num{background:#F0883E;color:#fff;}
+.sidebar-step.done .sidebar-num{background:#238636;color:#fff;}
+
+.sidebar-label{
+  font-size:12px;
+  font-weight:600;
+  color:#8B949E;
+  opacity:0;
+  transition:opacity 0.15s;
+  overflow:hidden;
+}
+.sidebar:hover .sidebar-label{opacity:1;}
+.sidebar-step.active .sidebar-label{color:#F0883E;}
+.sidebar-step.done .sidebar-label{color:#3FB950;}
+
+/* MAIN CONTENT */
+.main{
+  flex:1;
+  margin-left:72px;
+  padding:16px;
+  max-width:640px;
+  padding-bottom:80px;
+  box-sizing:border-box;
+}
+
+/* NAV BUTTONS — shift right on sidebar width */
+.nav-buttons{left:72px;}
 
 .section-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden;}
 .section-header{background:var(--red);color:var(--white);padding:12px 16px;display:flex;align-items:center;gap:10px;}
@@ -358,19 +450,40 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <button id="dark-mode-toggle" onclick="toggleDarkMode()" style="background:none;border:1px solid rgba(255,255,255,0.4);border-radius:20px;color:white;padding:5px 11px;font-size:16px;cursor:pointer;flex-shrink:0;" title="Toggle dark/light mode">🌙</button>
 </div>
 
-<div class="progress-bar" id="progress-bar">
-  <div class="prog-step active" onclick="goToPage(0)" data-page="0"><span class="step-num">1</span>Team</div>
-  <div class="prog-step" onclick="goToPage(1)" data-page="1"><span class="step-num">2</span>Site</div>
-  <div class="prog-step" onclick="goToPage(2)" data-page="2"><span class="step-num">3</span>Access</div>
-  <div class="prog-step" onclick="goToPage(3)" data-page="3"><span class="step-num">4</span>Observations</div>
-  <div class="prog-step" onclick="goToPage(4)" data-page="4"><span class="step-num">8</span>Analysis</div>
-  <div class="prog-step" onclick="goToPage(5)" data-page="5"><span class="step-num">9</span>Decision</div>
-  <div class="prog-step" onclick="goToPage(6)" data-page="6"><span class="step-num">5</span>GPS &amp; Map</div>
-  <div class="prog-step" onclick="goToPage(7)" data-page="7"><span class="step-num">6</span>Photos</div>
-  <div class="prog-step" onclick="goToPage(8)" data-page="8"><span class="step-num">7</span>Sketch</div>
-</div>
+<div class="app-layout">
+  <!-- LEFT SIDEBAR NAV -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-step active" onclick="goToPage(0)" data-page="0">
+      <span class="sidebar-num">1</span><span class="sidebar-label">Team</span>
+    </div>
+    <div class="sidebar-step" onclick="goToPage(1)" data-page="1">
+      <span class="sidebar-num">2</span><span class="sidebar-label">Site</span>
+    </div>
+    <div class="sidebar-step" onclick="goToPage(2)" data-page="2">
+      <span class="sidebar-num">3</span><span class="sidebar-label">Access</span>
+    </div>
+    <div class="sidebar-step" onclick="goToPage(3)" data-page="3">
+      <span class="sidebar-num">4</span><span class="sidebar-label">Observations</span>
+    </div>
+    <div class="sidebar-step" onclick="goToPage(4)" data-page="4">
+      <span class="sidebar-num">5</span><span class="sidebar-label">Analysis</span>
+    </div>
+    <div class="sidebar-step" onclick="goToPage(5)" data-page="5">
+      <span class="sidebar-num">6</span><span class="sidebar-label">Decision</span>
+    </div>
+    <div class="sidebar-step" onclick="goToPage(6)" data-page="6">
+      <span class="sidebar-num">7</span><span class="sidebar-label">GPS &amp; Map</span>
+    </div>
+    <div class="sidebar-step" onclick="goToPage(7)" data-page="7">
+      <span class="sidebar-num">8</span><span class="sidebar-label">Photos</span>
+    </div>
+    <div class="sidebar-step" onclick="goToPage(8)" data-page="8">
+      <span class="sidebar-num">9</span><span class="sidebar-label">Sketch</span>
+    </div>
+  </nav>
 
-<div class="main">
+  <!-- MAIN CONTENT -->
+  <div class="main">
 
 <!-- PAGE 0: Team & Site (Sections 1) -->
 <div class="page active" id="page-0">
@@ -953,6 +1066,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 </div>
 
 </div><!-- end .main -->
+</div><!-- end .app-layout -->
 
 <div class="nav-buttons">
   <button class="btn btn-secondary" id="btn-back" onclick="navigate(-1)">← Back</button>
@@ -1415,15 +1529,18 @@ function navigate(dir) {
 
 function goToPage(n) {
   document.getElementById('page-' + currentPage).classList.remove('active');
-  document.querySelector('[data-page="' + currentPage + '"]').classList.remove('active');
   currentPage = n;
   document.getElementById('page-' + currentPage).classList.add('active');
-  document.querySelectorAll('.prog-step').forEach(function(s, i) {
+  // Update sidebar steps
+  document.querySelectorAll('.sidebar-step').forEach(function(s, i) {
     s.classList.toggle('active', i === currentPage);
     s.classList.toggle('done', i < currentPage);
   });
   updateNavButtons();
   window.scrollTo(0, 0);
+  // Scroll sidebar to keep active step visible
+  var activeStep = document.querySelector('.sidebar-step.active');
+  if (activeStep) activeStep.scrollIntoView({ block: 'nearest' });
   if (currentPage === 6) setTimeout(initMap, 150);
 }
 
