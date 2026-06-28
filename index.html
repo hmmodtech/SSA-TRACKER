@@ -140,83 +140,94 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 
 /* LEFT SIDEBAR */
 .sidebar{
-  width:72px;
+  width:0;
   flex-shrink:0;
-  background:#161B22;
+  background:#1C2128;
   border-right:1px solid #30363D;
   position:fixed;
-  top:60px;
+  top:49px;
   bottom:70px;
   left:0;
-  overflow-y:auto;
-  overflow-x:hidden;
+  overflow:hidden;
   scrollbar-width:none;
   z-index:100;
   display:flex;
   flex-direction:column;
-  padding:8px 0;
-  transition:width 0.2s;
+  padding:6px 0;
+  transition:width 0.22s cubic-bezier(0.4,0,0.2,1),box-shadow 0.22s;
+  box-shadow:none;
 }
 .sidebar::-webkit-scrollbar{display:none;}
-.sidebar:hover{width:160px;}
+.sidebar:hover{width:180px;box-shadow:4px 0 16px rgba(0,0,0,0.35);}
+
+/* Trigger zone — invisible 8px strip on left edge */
+.sidebar-trigger{
+  position:fixed;
+  top:49px;
+  bottom:70px;
+  left:0;
+  width:8px;
+  z-index:99;
+  cursor:e-resize;
+}
 
 .sidebar-step{
   display:flex;
   align-items:center;
   gap:10px;
-  padding:11px 12px;
+  padding:10px 14px;
   cursor:pointer;
   border-left:3px solid transparent;
+  border-radius:0 6px 6px 0;
+  margin:2px 8px 2px 0;
   transition:all 0.15s;
   user-select:none;
-  overflow:hidden;
   white-space:nowrap;
-  min-height:44px;
+  min-height:40px;
 }
-.sidebar-step:hover{background:rgba(255,255,255,0.05);}
-.sidebar-step.active{border-left-color:#F0883E;background:rgba(240,136,62,0.1);}
+.sidebar-step:hover{background:rgba(255,255,255,0.06);}
+.sidebar-step.active{
+  border-left-color:#F0883E;
+  background:rgba(240,136,62,0.12);
+}
 .sidebar-step.done{border-left-color:#3FB950;}
 
+/* Rectangle tab indicator — no circle, just a colored rect */
 .sidebar-num{
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  width:24px;
+  width:6px;
   height:24px;
-  border-radius:50%;
-  background:#30363D;
-  color:#8B949E;
-  font-size:11px;
-  font-weight:700;
+  border-radius:2px;
+  background:#444C56;
   flex-shrink:0;
 }
-.sidebar-step.active .sidebar-num{background:#F0883E;color:#fff;}
-.sidebar-step.done .sidebar-num{background:#238636;color:#fff;}
+.sidebar-step.active .sidebar-num{background:#F0883E;}
+.sidebar-step.done .sidebar-num{background:#3FB950;}
 
 .sidebar-label{
   font-size:12px;
   font-weight:600;
   color:#8B949E;
-  opacity:0;
-  transition:opacity 0.15s;
   overflow:hidden;
+  white-space:nowrap;
 }
-.sidebar:hover .sidebar-label{opacity:1;}
 .sidebar-step.active .sidebar-label{color:#F0883E;}
 .sidebar-step.done .sidebar-label{color:#3FB950;}
 
-/* MAIN CONTENT */
+/* MAIN CONTENT — no left margin since sidebar is hidden by default */
 .main{
   flex:1;
-  margin-left:72px;
+  margin-left:0;
   padding:16px;
-  max-width:640px;
+  max-width:680px;
   padding-bottom:80px;
   box-sizing:border-box;
 }
 
-/* NAV BUTTONS — shift right on sidebar width */
-.nav-buttons{left:72px;}
+/* NAV BUTTONS — full width since sidebar hidden */
+.nav-buttons{left:0;}
 
 .section-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden;}
 .section-header{background:var(--red);color:var(--white);padding:12px 16px;display:flex;align-items:center;gap:10px;}
@@ -451,6 +462,9 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 </div>
 
 <div class="app-layout">
+  <!-- Invisible hover trigger strip on the left edge -->
+  <div class="sidebar-trigger" id="sidebar-trigger"></div>
+
   <!-- LEFT SIDEBAR NAV -->
   <nav class="sidebar" id="sidebar">
     <div class="sidebar-step active" onclick="goToPage(0)" data-page="0">
@@ -1119,7 +1133,45 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
 <script>
 // ============================================================
-// DARK / LIGHT MODE
+// SIDEBAR AUTO-HIDE — show on hover over left edge, hide when mouse leaves
+// ============================================================
+function initSidebar() {
+  var trigger = document.getElementById('sidebar-trigger');
+  var sidebar  = document.getElementById('sidebar');
+  if (!trigger || !sidebar) return;
+  var hideTimer = null;
+
+  function showSidebar() {
+    clearTimeout(hideTimer);
+    sidebar.style.width = '180px';
+    sidebar.style.boxShadow = '4px 0 20px rgba(0,0,0,0.4)';
+  }
+  function hideSidebar() {
+    hideTimer = setTimeout(function() {
+      sidebar.style.width = '0';
+      sidebar.style.boxShadow = 'none';
+    }, 180);
+  }
+
+  trigger.addEventListener('mouseenter', showSidebar);
+  trigger.addEventListener('touchstart', function(e){ e.preventDefault(); showSidebar(); }, { passive: false });
+  sidebar.addEventListener('mouseenter', showSidebar);
+  sidebar.addEventListener('mouseleave', hideSidebar);
+  trigger.addEventListener('mouseleave', hideSidebar);
+
+  // Mobile: tap the trigger to toggle
+  var sidebarVisible = false;
+  trigger.addEventListener('click', function() {
+    sidebarVisible = !sidebarVisible;
+    if (sidebarVisible) showSidebar(); else { clearTimeout(hideTimer); sidebar.style.width='0'; sidebar.style.boxShadow='none'; }
+  });
+  // Hide sidebar when a step is tapped on mobile
+  sidebar.addEventListener('click', function() {
+    setTimeout(function(){ sidebar.style.width='0'; sidebar.style.boxShadow='none'; sidebarVisible=false; }, 200);
+  });
+}
+
+// ============================================================
 // ============================================================
 function toggleDarkMode() {
   var isDark = document.body.classList.toggle('dark-mode');
@@ -1492,6 +1544,7 @@ window.addEventListener('load', function() {
   initPredictiveSuggestions();
   initConditionalSections();
   initSiteTypeListener();
+  initSidebar();
   updateNavButtons(); // ← always run this NOW, not after async operations
 
   // 2. Autosave listener (non-blocking)
