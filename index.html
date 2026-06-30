@@ -1508,6 +1508,7 @@ initTheme();
 // STATE
 // ============================================================
 var currentPage = 0;
+var lastReportSource = 'regular'; // 'regular' | 'quick' — tracks which app generated the current report
 var totalPages  = 9;
 var mapInitialized = false;
 var fsMapInitialized = false;
@@ -3021,6 +3022,66 @@ function fv(v,fb){ fb=fb||'<span style="color:#bbb;font-style:italic;">Not provi
 // text run is swapped for a real embedded image directly in the
 // docx XML afterward.
 // ------------------------------------------------------------
+// ── QUICK ASSESSMENT — template data/image gatherers ──────────────────────
+// Mirrors gatherTemplateData()/gatherTemplateImageSources() but reads the
+// q- prefixed fields, and strips "q-" from tag names so a Word template
+// can use the SAME short tag names as the regular template (e.g. {site-name}).
+function gatherQuickTemplateData() {
+  var data = {};
+
+  document.querySelectorAll('#quick-app input[id], #quick-app textarea[id], #quick-app select[id]').forEach(function (el) {
+    if (el.type === 'file' || el.type === 'radio') return;
+    var tag = el.id.replace(/^q-/, '');
+    data[tag] = el.value || '';
+  });
+
+  var seenGroups = {};
+  document.querySelectorAll('#quick-app input[type="radio"][name]').forEach(function (el) {
+    var tagId = el.id.replace(/^q-/, '');
+    data[tagId] = el.checked ? el.value : '';
+    var groupTag = el.name.replace(/^q-/, '');
+    if (!seenGroups[el.name]) { seenGroups[el.name] = true; data[groupTag] = getRadioIn('#quick-app', el.name); }
+  });
+
+  // Team members
+  var teamLines = [];
+  for (var ti = 1; ti <= qTeamCount; ti++) {
+    var v = qGetVal('q-team' + ti);
+    if (v) { teamLines.push(v); data['team' + ti] = v; }
+  }
+  data['team-members-all'] = teamLines.join(', ');
+
+  data['site-type']   = qGetRadio('q-site-type')   || '';
+  data['camp-type']   = qGetRadio('q-camp-type')   || '';
+  data['cars-access'] = qGetRadio('q-cars-access') || '';
+  data['roads']       = qGetRadio('q-roads')       || '';
+  data['uxo']          = qGetRadio('q-uxo')         || '';
+  data['destruction'] = qGetRadio('q-destruction') || '';
+  data['recommend']   = qGetRadio('q-recommend')   || '';
+
+  data['assess-date'] = qGetVal('q-assess-date');
+  data['assess-time'] = qGetVal('q-assess-time');
+  data['site-name']   = qGetVal('q-site-name');
+  data['camp-gps']    = qGetVal('q-camp-gps');
+  data['gps-coordinates'] = qGetVal('q-camp-gps');
+
+  return data;
+}
+
+function getRadioIn(scopeSelector, name) {
+  var el = document.querySelector(scopeSelector + ' input[name="' + name + '"]:checked');
+  return el ? el.value : '';
+}
+
+function gatherQuickTemplateImageSources() {
+  var sources = {};
+  sources['photo-overview'] = qPhotos[0] ? qPhotos[0].dataURL : null;
+  for (var qi = 0; qi < qPhotos.length && qi < 5; qi++) {
+    sources['photo-' + (qi + 1)] = qPhotos[qi].dataURL;
+  }
+  return sources;
+}
+
 function gatherTemplateImageSources() {
   var sources = {};
   sources['photo-input-overview']  = (photos.overview  && photos.overview[0])  ? photos.overview[0].dataURL  : null;
@@ -3297,7 +3358,7 @@ function startNewAssessment() {
 }
 
 function previewTemplateData() {
-  var data = gatherTemplateData();
+  var data = lastReportSource === 'quick' ? gatherQuickTemplateData() : gatherTemplateData();
   var lines = Object.keys(data).sort().map(function(k) {
     var v = data[k];
     if (!v || typeof v !== 'string' || v.length === 0) return null;
@@ -3343,8 +3404,8 @@ function generateWordReport() {
         nullGetter: function () { return ''; } // blank instead of throwing on tags with no matching field
       });
 
-      var imageSources = gatherTemplateImageSources();
-      var data = gatherTemplateData();
+      var imageSources = lastReportSource === 'quick' ? gatherQuickTemplateImageSources() : gatherTemplateImageSources();
+      var data = lastReportSource === 'quick' ? gatherQuickTemplateData() : gatherTemplateData();
       Object.keys(imageSources).forEach(function (tag) {
         data[tag] = imageSources[tag] ? imageSentinel(tag) : '';
       });
@@ -3357,9 +3418,12 @@ function generateWordReport() {
         mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       });
 
-      var siteName = (getVal('site-name') || 'Site').replace(/[^a-z0-9\-_]+/gi, '_');
-      var dateStr  = getVal('assess-date') || new Date().toISOString().slice(0, 10);
-      saveAs(out, siteName + '_Security_Site_Assessment_' + dateStr + '.docx');
+      var siteNameRaw = lastReportSource === 'quick' ? qGetVal('q-site-name') : getVal('site-name');
+      var dateRaw     = lastReportSource === 'quick' ? qGetVal('q-assess-date') : getVal('assess-date');
+      var siteName = (siteNameRaw || 'Site').replace(/[^a-z0-9\-_]+/gi, '_');
+      var dateStr  = dateRaw || new Date().toISOString().slice(0, 10);
+      var labelTag = lastReportSource === 'quick' ? 'Quick_Site_Assessment' : 'Security_Site_Assessment';
+      saveAs(out, siteName + '_' + labelTag + '_' + dateStr + '.docx');
 
       showToast('Word report generated!');
     } catch (err) {
@@ -3393,6 +3457,9 @@ function generateReport() {
   // Update page title so PDF filename = SiteName + Security Site Assessment
   var siteNameForTitle = getVal('site-name') || 'Site';
   document.title = siteNameForTitle + ' — Security Site Assessment';
+  lastReportSource = 'regular';
+  var th0 = document.querySelector('.report-toolbar h2');
+  if (th0) th0.textContent = '📄 Security Site Assessment Report';
 
   var sketchImg   = capturedSketchDataURL||null;
   var sketchEmpty = !capturedSketchDataURL;
@@ -3854,7 +3921,10 @@ function generateQuickReport() {
 
   document.getElementById('report-content').innerHTML = html;
   document.title = siteName + ' — Quick Site Assessment';
-  document.getElementById('report-page').classList.add('active');
+  lastReportSource = 'quick';
+  var th2 = document.querySelector('.report-toolbar h2');
+  if (th2) th2.textContent = '📄 Quick Site Assessment Report';
+  document.getElementById('report-page').classList.add('visible');
 }
 
 updateNavButtons();
