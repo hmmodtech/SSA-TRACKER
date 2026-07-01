@@ -1389,8 +1389,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
   <!-- Quick nav buttons -->
   <div class="nav-buttons">
-    <button class="btn btn-secondary" id="q-btn-back" onclick="qNavigate(-1)">← Back</button>
-    <button class="btn btn-primary" id="q-btn-next" onclick="qNavigate(1)">Next →</button>
+    <button class="btn btn-secondary" id="q-btn-back">← Back</button>
+    <button class="btn btn-primary" id="q-btn-next">Next →</button>
   </div>
 </div><!-- end #quick-app -->
 
@@ -3720,6 +3720,7 @@ function launchAssessment(type) {
       document.getElementById('regular-app').style.display = '';
       initSidebar();
     } else if (type === 'quick') {
+      qCurrentPage = 0;
       document.getElementById('quick-app').style.display = '';
       initQuickApp();
     }
@@ -3747,6 +3748,12 @@ function initQuickApp() {
   var qd = document.getElementById('q-assess-date');
   if (qd && !qd.value) qd.value = today;
   if (qTeamCount === 0) qRenderDefaultTeam();
+
+  // Wire up nav buttons once (removes need for inline onclick)
+  var back = document.getElementById('q-btn-back');
+  var next = document.getElementById('q-btn-next');
+  if (back) { back.onclick = function(){ qNavigate(-1); }; }
+  if (next) { next.onclick = function(){ qNavigate(1); }; }
 
   // Sidebar hover for quick app
   var trig = document.getElementById('qsidebar-trigger');
@@ -3847,13 +3854,18 @@ function qNavigate(dir) {
 }
 
 function qGoToPage(n) {
-  document.getElementById('qpage-' + qCurrentPage).classList.remove('active');
+  var qApp = document.getElementById('quick-app');
+  var cur = qApp.querySelector('#qpage-' + qCurrentPage);
+  if (cur) cur.classList.remove('active');
   qCurrentPage = n;
-  document.getElementById('qpage-' + n).classList.add('active');
-  document.querySelectorAll('.sidebar-step[data-qpage]').forEach(function(s, i) {
+  var nxt = qApp.querySelector('#qpage-' + n);
+  if (nxt) nxt.classList.add('active');
+
+  qApp.querySelectorAll('.sidebar-step[data-qpage]').forEach(function(s, i) {
     s.classList.toggle('active', i === n);
     s.classList.toggle('done', i < n);
   });
+
   var back = document.getElementById('q-btn-back');
   var next = document.getElementById('q-btn-next');
   if (back) back.style.display = n === 0 ? 'none' : '';
