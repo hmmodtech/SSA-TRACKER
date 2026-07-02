@@ -1394,13 +1394,17 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 </div><!-- end #quick-app -->
 
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  REGULAR-APP ONLY OVERLAYS (hidden when not in use)    -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="regular-overlays" style="display:none;">
 <div class="nav-buttons">
   <button class="btn btn-secondary" id="btn-back" onclick="navigate(-1)">← Back</button>
   <button class="btn btn-primary" id="btn-next" onclick="navigate(1)">Next →</button>
   <button class="btn btn-generate" id="btn-generate" onclick="generateReport()" style="display:none;">📄 Generate Report</button>
 </div>
-
-<div class="toast" id="toast"></div>
 
 <!-- FULLSCREEN MAP OVERLAY -->
 <div id="map-fullscreen-overlay">
@@ -1427,7 +1431,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 </div>
 
-<!-- REPORT PAGE -->
+</div><!-- end #regular-overlays -->
+</div><!-- end #regular-app -->
+
+<!-- REPORT PAGE — shared by both Regular and Quick assessment -->
 <div id="report-page">
   <div class="report-toolbar">
     <h2>📄 Security Site Assessment Report</h2>
@@ -1442,8 +1449,6 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="report-doc" id="report-content"></div>
   </div>
 </div>
-
-</div><!-- end #regular-app -->
 
 <script>
 // ============================================================
@@ -3718,6 +3723,7 @@ function launchAssessment(type) {
     landing.style.display = 'none';
     if (type === 'regular') {
       document.getElementById('regular-app').style.display = '';
+      document.getElementById('regular-overlays').style.display = '';
       initSidebar();
     } else if (type === 'quick') {
       qCurrentPage = 0;
@@ -3729,6 +3735,7 @@ function launchAssessment(type) {
 
 function backToLanding() {
   document.getElementById('regular-app').style.display = 'none';
+  document.getElementById('regular-overlays').style.display = 'none';
   document.getElementById('quick-app').style.display = 'none';
   var landing = document.getElementById('landing-page');
   landing.style.display = 'flex';
